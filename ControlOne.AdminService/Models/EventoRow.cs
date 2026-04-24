@@ -30,5 +30,6 @@ namespace ControlOne.AdminService.Models
       public DateTime inicio { get; set; }
       public DateTime final { get; set; }
         public int isEntradaOnline { get; set; }
-    }
+		public int isCompraDirecta { get; set; }
+	}
 }

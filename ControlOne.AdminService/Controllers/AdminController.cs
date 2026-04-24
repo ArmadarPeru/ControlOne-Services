@@ -746,9 +746,10 @@ namespace ControlOne.AdminService.Controllers
          var inicio = new SqlParameter("@inicio", evento.inicio);
          var final = new SqlParameter("@final", evento.final);
             var isEntradaOnline = new SqlParameter("@isEntradaOnline", evento.isEntradaOnline);
+			var isCompraDirecta = new SqlParameter("@isCompraDirecta", evento.isCompraDirecta);
 
-            var sql = "EXEC dbo.gestionarEvento @tipo,@id,@lugar,@juego,@aforo,@operadorZona,@operadorJuego,@password,@password2,@cajaInicial,@tarifaMinutos,@tarifaPrecioMinuto,@tarifaPrecioMinutoAdicional,@activo,@ticketDefinicion,@ticketsPromociones,@horaInicio,@horaFinal,@descripcion,@inicio,@final,@isEntradaOnline";
-            _context.Database.ExecuteSqlCommand(sql, tipo, id, lugar, juego, aforo, operadorZona, operadorJuego, password, password2, cajaInicial, tarifaMinutos, tarifaPrecioMinuto, tarifaPrecioMinutoAdicional, activo, ticketDefinicion, ticketsPromociones, horaInicio, horaFinal, descripcion, inicio, final, isEntradaOnline);
+         var sql = "EXEC dbo.gestionarEvento @tipo,@id,@lugar,@juego,@aforo,@operadorZona,@operadorJuego,@password,@password2,@cajaInicial,@tarifaMinutos,@tarifaPrecioMinuto,@tarifaPrecioMinutoAdicional,@activo,@ticketDefinicion,@ticketsPromociones,@horaInicio,@horaFinal,@descripcion,@inicio,@final,@isEntradaOnline,@isCompraDirecta";
+         _context.Database.ExecuteSqlCommand(sql, tipo, id, lugar, juego, aforo, operadorZona, operadorJuego, password, password2, cajaInicial, tarifaMinutos, tarifaPrecioMinuto, tarifaPrecioMinutoAdicional, activo, ticketDefinicion, ticketsPromociones, horaInicio, horaFinal, descripcion, inicio, final, isEntradaOnline, isCompraDirecta);
       }
 
       [HttpPost("gestionarpromocion/{tipo}")]

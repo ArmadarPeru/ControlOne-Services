@@ -16,5 +16,6 @@ namespace ControlOne.AdminService.Models
       public DateTime inicio { get; set; }
       public DateTime final { get; set; }
       public int diasDuracion { get; set; }
-   }
+		public int isCompraDirecta { get; set; }
+	}
 }
