@@ -73,8 +73,21 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
-      [AllowAnonymous]
-      [HttpGet("_paymentorder_|/{token}")]
+		SimpleAforo getSimpleAforoDB(long eventoId)
+		{
+			try
+			{
+				var _eventoId = new SqlParameter("@eventoId", eventoId);
+				return _context.SimpleAforos.FromSql("[dbo].[geAforoByEventoId] @eventoId", _eventoId).ToList().FirstOrDefault();
+			}
+			catch (Exception e)
+			{
+				return null;
+			}
+		}
+
+		[AllowAnonymous]
+      [HttpGet("_paymentorder_|/_DEPRECATED{token}")]
       public async Task<IActionResult> paymentOrder_(string token)
       {
          try
@@ -169,7 +182,13 @@ namespace ControlOne.AdminService.Controllers
          if (paymentOrder != null) // Validar integridad de cada propiedad desde la UI
          {
             paymentOrder.eventoFecha = paymentOrder.eventoFecha.ToUniversalTime().AddHours(-5);
-            CalcularMonto(paymentOrder);
+
+				var evento = _context.EventosORM.First(e => e.id == paymentOrder.eventoId);
+            if (evento.isCompraDirecta==1) {
+               paymentOrder.eventoFecha = evento.inicio;
+				}
+
+				CalcularMonto(paymentOrder);
             AssignUniquePaymentCodigo(paymentOrder);
 
             var culqiCargo = generarCulqiCargo(paymentOrder.token, paymentOrder.montoInt, paymentOrder.usuarioEmail);
@@ -416,21 +435,40 @@ namespace ControlOne.AdminService.Controllers
       {
          try
          {
-            string[] granularDate = pipedFecha.Split("|");
-            DateTime eventoFecha = new DateTime(Convert.ToInt32(granularDate[2]), Convert.ToInt32(granularDate[1]), Convert.ToInt32(granularDate[0]));
+            var evento = _context.EventosORM.First(e => e.id == eventoId);
 
-            var horariosByEvento = getHorariosEventoDB(eventoId, eventoFecha);
-            var horarioRequested = horariosByEvento.FirstOrDefault(horario => horario.id == horarioId);
-
-            var aforoInfo = new
+            if (evento.isCompraDirecta == 1)
             {
-               id = horarioRequested.id,
-               aforo = horarioRequested.aforo,
-               ocupados = horarioRequested.aforo - horarioRequested.vacantes,
-               disponible = horarioRequested.vacantes
-            };
+               var simpleAforo = getSimpleAforoDB(eventoId);
 
-            return Ok(new { code = 1000, message = "SUCCESS", aforoInfo = aforoInfo });
+               var aforoInfo = new
+               {
+                  id = 0,
+                  aforo = simpleAforo.aforo,
+                  ocupados = simpleAforo.ocupados,
+                  disponible = simpleAforo.disponible
+               };
+
+               return Ok(new { code = 1000, message = "SUCCESS", aforoInfo = aforoInfo });
+            }
+            else
+            {
+               string[] granularDate = pipedFecha.Split("|");
+               DateTime eventoFecha = new DateTime(Convert.ToInt32(granularDate[2]), Convert.ToInt32(granularDate[1]), Convert.ToInt32(granularDate[0]));
+
+               var horariosByEvento = getHorariosEventoDB(eventoId, eventoFecha);
+               var horarioRequested = horariosByEvento.FirstOrDefault(horario => horario.id == horarioId);
+
+               var aforoInfo = new
+               {
+                  id = horarioRequested.id,
+                  aforo = horarioRequested.aforo,
+                  ocupados = horarioRequested.aforo - horarioRequested.vacantes,
+                  disponible = horarioRequested.vacantes
+               };
+
+               return Ok(new { code = 1000, message = "SUCCESS", aforoInfo = aforoInfo });
+            }
          }
          catch (Exception e)
          {

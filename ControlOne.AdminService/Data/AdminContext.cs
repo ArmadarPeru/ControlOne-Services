@@ -12,7 +12,15 @@ namespace ControlOne.AdminService.Data
       public AdminContext(DbContextOptions<AdminContext> options) : base(options)
       {
       }
-      public DbSet<Apoderado> Apoderados { get; set; }
+
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
+		{
+			modelBuilder.Entity<EventoORM>()
+				 .ToTable("Eventos", "dbo")
+				 .HasKey(p => p.id);
+		}
+
+		public DbSet<Apoderado> Apoderados { get; set; }
       public DbSet<ApoderadoUsuario> ApoderadosUsuarios { get; set; }
       public DbSet<Usuario> Usuarios { get; set; }
       public DbSet<UsuarioZona> UsuariosZona { get; set; }
@@ -39,7 +47,8 @@ namespace ControlOne.AdminService.Data
       public DbSet<Descuento> Descuentos { get; set; }
       public DbSet<EventoOnline> EventosOnline { get; set; }
       public DbSet<EventoRow> EventoRows { get; set; }
-      public DbSet<EntradaRow> EntradaRows { get; set; }
+		public DbSet<EventoORM> EventosORM { get; set; }
+		public DbSet<EntradaRow> EntradaRows { get; set; }
       public DbSet<TicketPromocion> EntradaPromocionesRows { get; set; }
       public DbSet<EdadInfo> EdadInfos { get; set; }
       public DbSet<CanceladoInfo> Cancelados { get; set; }
@@ -54,5 +63,6 @@ namespace ControlOne.AdminService.Data
       public DbSet<TicketDefinicion> TicketTipos { get; set; }
       public DbSet<TicketControl> TicketsControl { get; set; }
       public DbSet<TicketPrecio> TicketPrecio { get; set; }
-   }
+		public DbSet<SimpleAforo> SimpleAforos { get; set; }
+	}
 }

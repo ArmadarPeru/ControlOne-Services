@@ -188,7 +188,7 @@ namespace ControlOne.AdminService.Controllers
         */
 
         /*[AllowAnonymous]*/
-        [HttpPost("_paymentorder_")]
+        [HttpPost("_paymentorder_DEPRECATED__")]
         public IActionResult _paymentOrder_([FromBody] Payment paymentOrder)
         {
             if (paymentOrder != null) // Validar integridad de cada propiedad desde la UI

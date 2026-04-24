@@ -29,7 +29,7 @@ namespace ControlOne.AdminService.Models
       public string descripcion { get; set; }
       public DateTime inicio { get; set; }
       public DateTime final { get; set; }
-        public int isEntradaOnline { get; set; }
-		public int isCompraDirecta { get; set; }
-	}
+      public int isEntradaOnline { get; set; }
+      public int isCompraDirecta { get; set; }
+   }
 }

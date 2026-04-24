@@ -16,6 +16,14 @@ namespace ControlOne.AdminService.Models
       public int vacantes { get; set; }
    }
 
+	public class SimpleAforo
+	{
+		public int id { get; set; }
+		public int aforo { get; set; }
+		public int ocupados { get; set; }
+		public int disponible { get; set; }
+	}
+	
    public class IziTrack
    {
       public long id { get; set; }

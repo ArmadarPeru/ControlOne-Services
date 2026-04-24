@@ -1,0 +1,16 @@
+﻿@ControlOne.AdminService_HostAddress = http://localhost:55246
+
+POST {{ControlOne.AdminService_HostAddress}}/admin/paymentorder
+Content-Type: application/json
+{
+  "usuarioId": 136466,
+  "eventoId": "41",
+  "eventoFecha": "2026-04-24T04:32:43.584Z",
+  "usuariosMayor4": 1,
+  "usuariosMenor4": 2,
+  "usuarioEmail": "jesusalvinoperu@gmail.com",
+  "promociones": "219",
+  "token":''
+}
+
+###
