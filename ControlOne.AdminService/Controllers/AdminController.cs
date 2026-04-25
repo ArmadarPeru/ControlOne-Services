@@ -808,38 +808,102 @@ namespace ControlOne.AdminService.Controllers
             else
             {
                List<EntradaRow> allEntradas = getEntradasRowsDB();
-               int adultoId = 0;
-               int noAdultoId = 0;
+					List<EntradaRow> entradasaGestionar = new List<EntradaRow> ();
+               int adultoId = 0, noAdultoId = 0, entrada3Id = 0, entrada4Id = 0;
 
                if (operacion == 0)// Obener Ids solo si se esta actualizando
                {
-                  adultoId = allEntradas.Where(ent => ent.codigo == entrada.codigo && ent.tipo == "ADULTO").FirstOrDefault().id;
-                  noAdultoId = allEntradas.Where(ent => ent.codigo == entrada.codigo && ent.tipo == "NOADULTO").FirstOrDefault().id;
+                  var adultoInfo = allEntradas.FirstOrDefault(ent => ent.codigo == entrada.codigo && ent.tipo == "ADULTO"); adultoId = adultoInfo is null ? 0 : adultoInfo.id;
+                  var noAdultoInfo = allEntradas.FirstOrDefault(ent => ent.codigo == entrada.codigo && ent.tipo == "NOADULTO"); noAdultoId = noAdultoInfo is null ? 0 : noAdultoInfo.id;
+                  var entrada3Info = allEntradas.FirstOrDefault(ent => ent.codigo == entrada.codigo && ent.tipo == "ENTRADA3"); entrada3Id = entrada3Info is null ? 0 : entrada3Info.id;
+                  var entrada4Info = allEntradas.FirstOrDefault(ent => ent.codigo == entrada.codigo && ent.tipo == "ENTRADA4"); entrada4Id = entrada4Info is null ? 0 : entrada4Info.id;
                }
 
-               EntradaRow entradaRowAdulto = new EntradaRow()
+               if (entrada.tipo == "EE")
                {
-                  id = adultoId,
-                  codigo = entrada.codigo,
-                  tipo = "ADULTO",
-                  titulo = entrada.tituloAdulto,
-                  icono = "adult.svg",
-                  mensaje = entrada.mensajeAdulto,
-                  precio = entrada.precioAdulto
-               };
-               EntradaRow entradaRowNoAdulto = new EntradaRow()
-               {
-                  id = noAdultoId,
-                  codigo = entrada.codigo,
-                  tipo = "NOADULTO",
-                  titulo = entrada.tituloNoAdulto,
-                  icono = "kid.svg",
-                  mensaje = entrada.mensajeNoAdulto,
-                  precio = entrada.precioNoAdulto
-               };
-               gestionarEntradaDB(operacion, entradaRowAdulto);
-               gestionarEntradaDB(operacion, entradaRowNoAdulto);
-               return Ok(new { code = 1000, message = "Entrada guardada" });
+                  EntradaRow entradaRowAdulto = new EntradaRow()
+                  {
+                     id = adultoId,codigo = entrada.codigo,tipo = "ADULTO",titulo = entrada.tituloAdulto,icono = "adult.svg",mensaje = entrada.mensajeAdulto,precio = entrada.precioAdulto
+                  };
+						EntradaRow entradaRowNoAdulto = new EntradaRow()
+						{
+							id = noAdultoId,codigo = entrada.codigo,tipo = "NOADULTO",titulo = entrada.tituloNoAdulto,icono = "kid.svg",mensaje = entrada.mensajeNoAdulto,precio = entrada.precioNoAdulto
+						};
+                  entradasaGestionar.Add(entradaRowAdulto);
+                  entradasaGestionar.Add(entradaRowNoAdulto);
+					}
+					else if (entrada.tipo == "E3")
+					{
+						EntradaRow entradaRowAdulto = new EntradaRow()
+						{
+							id = adultoId,codigo = entrada.codigo,tipo = "ADULTO",titulo = entrada.tituloAdulto,icono = "adult.svg",mensaje = entrada.mensajeAdulto,precio = entrada.precioAdulto
+						};
+						EntradaRow entradaRowNoAdulto = new EntradaRow()
+						{
+							id = noAdultoId,codigo = entrada.codigo,tipo = "NOADULTO",titulo = entrada.tituloNoAdulto,icono = "kid.svg",mensaje = entrada.mensajeNoAdulto,precio = entrada.precioNoAdulto
+						};
+						EntradaRow entrada3 = new EntradaRow()
+						{
+							id = entrada3Id,codigo = entrada.codigo,tipo = "ENTRADA3",titulo = entrada.tituloEntrada3,icono = "kid.svg",mensaje = entrada.mensajeEntrada3,precio = entrada.precioEntrada3
+						};
+						entradasaGestionar.Add(entradaRowAdulto);
+						entradasaGestionar.Add(entradaRowNoAdulto);
+						entradasaGestionar.Add(entrada3);
+					}
+					else if (entrada.tipo == "E4")
+					{
+						EntradaRow entradaRowAdulto = new EntradaRow()
+						{
+							id = adultoId,
+							codigo = entrada.codigo,
+							tipo = "ADULTO",
+							titulo = entrada.tituloAdulto,
+							icono = "adult.svg",
+							mensaje = entrada.mensajeAdulto,
+							precio = entrada.precioAdulto
+						};
+						EntradaRow entradaRowNoAdulto = new EntradaRow()
+						{
+							id = noAdultoId,
+							codigo = entrada.codigo,
+							tipo = "NOADULTO",
+							titulo = entrada.tituloNoAdulto,
+							icono = "kid.svg",
+							mensaje = entrada.mensajeNoAdulto,
+							precio = entrada.precioNoAdulto
+						};
+						EntradaRow entrada3 = new EntradaRow()
+						{
+							id = entrada3Id,
+							codigo = entrada.codigo,
+							tipo = "ENTRADA3",
+							titulo = entrada.tituloEntrada3,
+							icono = "kid.svg",
+							mensaje = entrada.mensajeEntrada3,
+							precio = entrada.precioEntrada3
+						};
+						EntradaRow entrada4 = new EntradaRow()
+						{
+							id = entrada4Id,
+							codigo = entrada.codigo,
+							tipo = "ENTRADA4",
+							titulo = entrada.tituloEntrada4,
+							icono = "kid.svg",
+							mensaje = entrada.mensajeEntrada4,
+							precio = entrada.precioEntrada4
+						};
+						entradasaGestionar.Add(entradaRowAdulto);
+						entradasaGestionar.Add(entradaRowNoAdulto);
+						entradasaGestionar.Add(entrada3);
+						entradasaGestionar.Add(entrada4);
+					}
+
+					foreach (var entradaItem in entradasaGestionar)
+					{
+						gestionarEntradaDB(operacion, entradaItem);
+					}
+					
+					return Ok(new { code = 1000, message = "Entrada guardada" });
             }
          }
          catch (Exception e)

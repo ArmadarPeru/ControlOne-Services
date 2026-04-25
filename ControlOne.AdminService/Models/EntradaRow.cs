@@ -23,14 +23,22 @@ namespace ControlOne.AdminService.Models
       public int id { get; set; }
       public string codigo { get; set; }
       public string tipo { get; set; }
+
       public string tituloAdulto { get; set; }
       public string tituloNoAdulto { get; set; }
-      public string mensajeAdulto { get; set; }
-      public string mensajeNoAdulto { get; set; }
-      public int precioAdulto { get; set; }
-      public int precioNoAdulto { get; set; }
+		public string tituloEntrada3 { get; set; }
+		public string tituloEntrada4 { get; set; }
 
-   }
+		public string mensajeAdulto { get; set; }
+      public string mensajeNoAdulto { get; set; }
+		public string mensajeEntrada3 { get; set; }
+		public string mensajeEntrada4 { get; set; }
+
+		public int precioAdulto { get; set; }
+      public int precioNoAdulto { get; set; }
+		public int precioEntrada3 { get; set; }
+		public int precioEntrada4 { get; set; }
+	}
 
    public class ReprogramarEntradaRequest
    {
