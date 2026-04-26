@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
@@ -14,11 +15,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ControlOne.AdminService.Controllers
 {
-    [Authorize]
+   [Authorize]
    [Route("[controller]")]
    [ApiController]
    public partial class AdminController : ControllerBase
@@ -467,7 +469,7 @@ namespace ControlOne.AdminService.Controllers
          var eventos = _context.Eventos.Where(e => e.activo == 1);
          response.eventos = eventos;
          return Ok(response);
-      }      
+      }
 
       public IActionResult getCajasForExport_0(long eventoId, DateTime desde, DateTime hasta)
       {
@@ -662,48 +664,48 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
-        [AllowAnonymous]
-        [HttpPost("subirimagen")]
-        public async Task<ActionResult> subirImagen([FromForm] IFormFile formData)
-        {
-            var file = Request.Form.Files[0];
-            string fileName = file.Name + Path.GetExtension(file.FileName);
-            string uploadUrl = String.Format("{0}/{1}/{2}", "ftp://ftp.experienciasxtreme.com", "", "game-" + fileName);
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(uploadUrl);
-            request.Method = WebRequestMethods.Ftp.UploadFile;
+      [AllowAnonymous]
+      [HttpPost("subirimagen")]
+      public async Task<ActionResult> subirImagen([FromForm] IFormFile formData)
+      {
+         var file = Request.Form.Files[0];
+         string fileName = file.Name + Path.GetExtension(file.FileName);
+         string uploadUrl = String.Format("{0}/{1}/{2}", "ftp://ftp.experienciasxtreme.com", "", "game-" + fileName);
+         FtpWebRequest request = (FtpWebRequest)WebRequest.Create(uploadUrl);
+         request.Method = WebRequestMethods.Ftp.UploadFile;
 
-            request.Credentials = new NetworkCredential("xp_user_games", "usergames_");           
-            request.Method = WebRequestMethods.Ftp.UploadFile;
+         request.Credentials = new NetworkCredential("xp_user_games", "usergames_");
+         request.Method = WebRequestMethods.Ftp.UploadFile;
 
-            try
+         try
+         {
+            byte[] fileContents = null;
+            if (file.Length > 0)
             {
-                byte[] fileContents = null;
-                if (file.Length > 0)
-                {
-                    using (var ms = new MemoryStream())
-                    {
-                        file.CopyTo(ms);
-                        fileContents = ms.ToArray();
-                    }
-                }
-
-                // Copy the contents of the file to the request stream.
-                request.ContentLength = fileContents.Length;
-                Stream requestStream = request.GetRequestStream();
-                requestStream.Write(fileContents, 0, fileContents.Length);
-                requestStream.Close();
-                FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+               using (var ms = new MemoryStream())
+               {
+                  file.CopyTo(ms);
+                  fileContents = ms.ToArray();
+               }
             }
-            catch (Exception)
-            {
 
-                return Ok(new { code = 2000, message = "No se pudo guardar la imagen" });
-            }
-                        
-            return Ok(new { code = 1000, message = "Imagen guardada" });
-        }
+            // Copy the contents of the file to the request stream.
+            request.ContentLength = fileContents.Length;
+            Stream requestStream = request.GetRequestStream();
+            requestStream.Write(fileContents, 0, fileContents.Length);
+            requestStream.Close();
+            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+         }
+         catch (Exception)
+         {
 
-        [HttpPost("gestionarevento/{tipo}")]
+            return Ok(new { code = 2000, message = "No se pudo guardar la imagen" });
+         }
+
+         return Ok(new { code = 1000, message = "Imagen guardada" });
+      }
+
+      [HttpPost("gestionarevento/{tipo}")]
       public async Task<IActionResult> gestionarEvento(int tipo, EventoRow evento)
       {
          try
@@ -720,12 +722,35 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
+      [AllowAnonymous]
 		[HttpPost("addevento")]
 		public async Task<IActionResult> addEvento( EventoORM evento)
 		{
 			try
 			{
+            long operadorZonaId = addUser(new Models.User() { nombres = evento.operadorZonaEmail, password = string.Empty, email = evento.operadorZonaEmail, celular = string.Empty });
+            if (operadorZonaId == 0) throw new Exception("No se pudo registrar al Operador de Zona");
+
+				long operadorJuegoId = addUser(new Models.User() { nombres = evento.operadorJuegoEmail, password = string.Empty, email = evento.operadorJuegoEmail, celular = string.Empty });
+				if (operadorJuegoId == 0) throw new Exception("No se pudo registrar al Operador de Juego");
+
+            long operadorZonaRoleId = 2;
+				long operadorJuegoRoleId = 3;
+
+            long operadorZonaRoleRecordId = addUserRole(new UserRole() { userId = operadorZonaId, roleId = operadorZonaRoleId });
+				if (operadorZonaRoleRecordId == 0) throw new Exception("No se pudo registrar el registro del rol del Operador de zona");
+
+				long operadorJuegoRoleRecordId = addUserRole(new UserRole() { userId = operadorJuegoId, roleId = operadorJuegoRoleId });
+				if (operadorZonaRoleRecordId == 0) throw new Exception("No se pudo registrar el registro del rol del Operador de juego");
+
+            evento.operadorZona = operadorZonaId;
+            evento.operadorJuego = operadorJuegoId;
+
 				_context.EventosORM.Add(evento);
+				_context.SaveChanges();
+
+            EventoHorarioORM eventoHorario = new EventoHorarioORM() { eventoId = evento.id, inicio = evento.horaInicio, final = evento.horaFinal };
+            _context.EventoHorariosORM.Add(eventoHorario);
 				_context.SaveChanges();
 
 				return Ok(new { code = 1000, message = "Evento agregado" });
@@ -735,45 +760,98 @@ namespace ControlOne.AdminService.Controllers
             return BadRequest(new { code = 3000, message = "No se pudo agregar el Evento" + e.Message });
 			}
 		}
-
+      [AllowAnonymous]
       [HttpPost("updateevento")]
       public async Task<IActionResult> udpateEvento(EventoORM evento)
-		{
-			try
-			{
+      {
+         try
+         {
             var dbEvento = _context.EventosORM.Include(e => e.promociones).Single(e => e.id == evento.id);
 
-				_context.Entry(dbEvento).CurrentValues.SetValues(evento);
+            User currentOperadorZona = _context.Users.SingleOrDefault(u => u.id == dbEvento.operadorZona);
+            evento.operadorZona = currentOperadorZona.id;
+            if (currentOperadorZona.email != evento.operadorZonaEmail)
+               currentOperadorZona.email = evento.operadorZonaEmail;
 
-				foreach (var incomingChild in evento.promociones)
-				{
-					var dbChild = dbEvento.promociones.SingleOrDefault(c => c.id == incomingChild.id);
-					if (dbChild != null)
-					{
-						_context.Entry(dbChild).CurrentValues.SetValues(incomingChild);
-					}
-					else
-					{
-						_context.EventosPromocion.Add(incomingChild);
-					}
-				}
+            User currentOperadorJuego = _context.Users.SingleOrDefault(u => u.id == dbEvento.operadorJuego);
+            evento.operadorJuego = currentOperadorJuego.id;
+            if (currentOperadorJuego.email != evento.operadorJuegoEmail)
+               currentOperadorJuego.email = evento.operadorJuegoEmail;
 
-				foreach (var dbChild in dbEvento.promociones.ToList())
-				{
-					if (!evento.promociones.Any(c => c.id == dbChild.id))
-					{
-						_context.EventosPromocion.Remove(dbChild);
-					}
-				}
+            EventoHorarioORM eventoHorarioToUpdate = new EventoHorarioORM() { eventoId = evento.id, inicio = evento.horaInicio, final = evento.horaFinal };
+            var dbEventoHorario = _context.EventoHorariosORM.SingleOrDefault(eh => eh.eventoId == evento.id);
+            _context.Entry(dbEventoHorario).CurrentValues.SetValues(eventoHorarioToUpdate);
 
+            _context.Entry(dbEvento).CurrentValues.SetValues(evento);
+
+            foreach (var incomingChild in evento.promociones)
+            {
+               var dbChild = dbEvento.promociones.SingleOrDefault(c => c.id == incomingChild.id);
+               if (dbChild != null)
+               {
+                  _context.Entry(dbChild).CurrentValues.SetValues(incomingChild);
+               }
+               else
+               {
+                  _context.EventosPromocion.Add(incomingChild);
+               }
+            }
+
+            foreach (var dbChild in dbEvento.promociones.ToList())
+            {
+               if (!evento.promociones.Any(c => c.id == dbChild.id))
+               {
+                  _context.EventosPromocion.Remove(dbChild);
+               }
+            }
+
+            _context.SaveChanges();
+
+            return Ok(new { code = 1000, message = "Evento actualizado" });
+         }
+         catch (Exception e)
+         {
+            return BadRequest(new { code = 3000, message = "No se pudo actualizar el Evento" + e.Message });
+         }
+      }
+
+      long addUser(User user)
+      {
+			try
+			{
+            user.createdon = DateTime.UtcNow.AddHours(-5);
+				_context.Users.Add(user);
 				_context.SaveChanges();
 
-				return Ok(new { code = 1000, message = "Evento actualizado" });
+				return user.id;
 			}
 			catch (Exception e)
 			{
-				return BadRequest(new { code = 3000, message = "No se pudo actualizar el Evento" + e.Message });
+				return 0;
 			}
+		}
+
+		long addUserRole(UserRole userRole)
+		{
+			try
+			{
+				_context.UserRoles.Add(userRole);
+				_context.SaveChanges();
+            return userRole.id;
+			}
+			catch (Exception e)
+			{
+				return 0;
+			}
+		}
+
+		[HttpGet("getpromocionesbyevento/{eventoid}")]
+		public IActionResult getPromocionesByEvento(int eventoid)
+		{
+			dynamic response = new System.Dynamic.ExpandoObject();
+			var promociones = _context.EventosPromocion.Where(e => e.eventoId == eventoid);
+			response.promociones = promociones;
+			return Ok(response);
 		}
 
 		void gestionarEventoDB(int tipoAccion, EventoRow evento)
@@ -785,8 +863,8 @@ namespace ControlOne.AdminService.Controllers
          var aforo = new SqlParameter("@aforo", evento.aforo);
          var operadorZona = new SqlParameter("@operadorZona", evento.operadorZonaEmail);
          var operadorJuego = new SqlParameter("@operadorJuego", evento.operadorJuegoEmail);
-         var password = new SqlParameter("@password", evento.passwordZona);
-         var password2 = new SqlParameter("@password2", evento.passwordJuego);
+         var password = new SqlParameter("@password", evento.password);
+         var password2 = new SqlParameter("@password2", evento.password2);
 
          var cajaInicial = new SqlParameter("@cajaInicial", evento.cajaInicial);
          var tarifaMinutos = new SqlParameter("@tarifaMinutos", evento.tarifaMinutos);

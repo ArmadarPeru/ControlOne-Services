@@ -19,7 +19,11 @@ namespace ControlOne.AdminService.Data
              .ToTable("Eventos", "dbo")
              .HasKey(p => p.id);
 
-         modelBuilder.Entity<EventoORM>()
+			modelBuilder.Entity<EventoHorarioORM>()
+				 .ToTable("eventoHorario", "dbo")
+				 .HasKey(p => p.eventoId);
+
+			modelBuilder.Entity<EventoORM>()
        .HasMany(p => p.promociones)     // Parent has many Children
        .WithOne(c => c.evento)       // Each Child has one Parent
        .HasForeignKey(c => c.eventoId) // Explicitly set the FK
@@ -71,5 +75,6 @@ namespace ControlOne.AdminService.Data
       public DbSet<TicketPrecio> TicketPrecio { get; set; }
 		public DbSet<SimpleAforo> SimpleAforos { get; set; }
 		public DbSet<EventoPromocion> EventosPromocion { get; set; }
+		public DbSet<EventoHorarioORM> EventoHorariosORM { get; set; }
 	}
 }

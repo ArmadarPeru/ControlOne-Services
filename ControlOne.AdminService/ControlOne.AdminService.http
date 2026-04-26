@@ -20,14 +20,16 @@ Content-Type: application/json
 
 {
   "id":"0",
-  "lugar": "LUGAR TEST 4",
-  "juego": "JUEGO TEST 4",
+  "lugar": "petroperu 4",
+  "juego": "petro juego",
   "aforo": "5000",
   "fechaInicio": "2026-05-01",
-  "operadorZonaEmail": "operador1@gmail.com",
-  "operadorJuegoEmail": "operador2@gmail.com",
-  "passwordZona": "1234",
-  "passwordJuego": "5678",
+  "operadorZona": "1000",
+  "operadorJuego": "2000",
+  "operadorZonaEmail": "operador_zona_pant_p@gmail.com",
+  "operadorJuegoEmail": "operador_juego_pant_p@gmail.com",
+  "password": "1234",
+  "password2": "5678",
   "cajaInicial": "200",
   "tarifaMinutos": "30",
   "tarifaPrecioMinuto": "30",
@@ -38,10 +40,10 @@ Content-Type: application/json
   "horaInicio": "2000-01-31",
   "horaFinal": "2000-01-31",
   "descripcion": "Juego mecánico que desafía la destreza y equilibrio, ideal para jovenes y adultos",
-  "inicio": "2026-05-01",
-  "final": "2026-05-02",
+  "inicio": "2026-05-01 11:00:00",
+  "final": "2026-05-01 17:00:00",
   "isEntradaOnline": 1,
-  "isCompraDirecta": 1,
+  "isCompraDirecta": 0,
   "promociones": [
     {
       "id": "0",
@@ -56,21 +58,21 @@ Content-Type: application/json
   ]
 }
 
-###
+### UPDATE EVENTO
 
   POST {{ControlOne.AdminService_HostAddress}}/admin/updateevento
 Content-Type: application/json
 
 {
-  "id":"57",
-  "lugar": "LUGAR TEST VX",
-  "juego": "JUEGO TEST VX_",
+  "id": "65",
+  "lugar": "PETRO 4",
+  "juego": "PETRO 4 JUEGO x",
   "aforo": "50",
-  "fechaInicio": "2026-12-12",
-  "operadorZonaEmail": "operador1@gmail.com",
-  "operadorJuegoEmail": "operador2@gmail.com",
-  "passwordZona": "1234",
-  "passwordJuego": "5678",
+  "fechaInicio": "2026-05-01T00:00:00.000Z",
+  "operadorZonaEmail": "operador_zona_pant_p@gmail.com",
+  "operadorJuegoEmail": "operador_juego_pant_p@gmail.com",
+  "password": "1234",
+  "password2": "5678",
   "cajaInicial": "200",
   "tarifaMinutos": "30",
   "tarifaPrecioMinuto": "30",
@@ -78,28 +80,18 @@ Content-Type: application/json
   "activo": 1,
   "ticketDefinicion": "TRIANGULO",
   "ticketsPromociones": "",
-  "horaInicio": "2000-01-31",
-  "horaFinal": "2000-01-31",
+  "horaInicio": "2000-02-01 10:30",
+  "horaFinal": "2000-01-31 18:30",
   "descripcion": "Juego mecánico que desafía la destreza y equilibrio, ideal para jovenes y adultos",
   "inicio": "2026-05-01",
   "final": "2026-05-02",
   "isEntradaOnline": 1,
   "isCompraDirecta": 1,
   "promociones": [
-     {
-      "id": "0",
-      "eventoId": "57",
-      "promocionId": "23"
-    },
     {
-      "id": "0",
-      "eventoId": "57",
-      "promocionId": "19"
-    },
-    {
-      "id": "0",
-      "eventoId": "57",
-      "promocionId": "33"
+      "id": 0,
+      "eventoId": "1",
+      "promocionId": 231
     }
   ]
 }

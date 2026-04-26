@@ -37,5 +37,10 @@ namespace ControlOne.AdminService.Models
       public int isEntradaOnline { get; set; }
       public int isCompraDirecta { get; set; }
 		public List<EventoPromocion> promociones { get; set; }
+
+      [NotMapped]
+		public string operadorZonaEmail { get; set; }
+		[NotMapped]
+		public string operadorJuegoEmail { get; set; }
 	}
 }

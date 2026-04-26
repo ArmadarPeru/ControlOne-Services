@@ -30,4 +30,11 @@ namespace ControlOne.AdminService.Models
       public string rawJson { get; set; }
       public DateTime createdOn { get; set; }
    }
+
+   public class EventoHorarioORM
+   {
+		public long eventoId { get; set; }
+		public DateTime inicio { get; set; }
+		public DateTime final { get; set; }
+	}
 }

@@ -15,8 +15,8 @@ namespace ControlOne.AdminService.Models
       public int aforo { get; set; }
       public string operadorZonaEmail { get; set; }
       public string operadorJuegoEmail { get; set; }
-      public string passwordZona { get; set; }
-      public string passwordJuego { get; set; }
+      public string password { get; set; }
+      public string password2 { get; set; }
       public decimal cajaInicial { get; set; }
       public int tarifaMinutos { get; set; }
       public decimal tarifaPrecioMinuto { get; set; }
