@@ -36,5 +36,6 @@ namespace ControlOne.AdminService.Models
 
       public int isEntradaOnline { get; set; }
       public int isCompraDirecta { get; set; }
-   }
+		public List<EventoPromocion> promociones { get; set; }
+	}
 }

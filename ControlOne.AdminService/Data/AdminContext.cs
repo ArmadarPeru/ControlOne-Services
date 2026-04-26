@@ -13,12 +13,18 @@ namespace ControlOne.AdminService.Data
       {
       }
 
-		protected override void OnModelCreating(ModelBuilder modelBuilder)
-		{
-			modelBuilder.Entity<EventoORM>()
-				 .ToTable("Eventos", "dbo")
-				 .HasKey(p => p.id);
-		}
+      protected override void OnModelCreating(ModelBuilder modelBuilder)
+      {
+         modelBuilder.Entity<EventoORM>()
+             .ToTable("Eventos", "dbo")
+             .HasKey(p => p.id);
+
+         modelBuilder.Entity<EventoORM>()
+       .HasMany(p => p.promociones)     // Parent has many Children
+       .WithOne(c => c.evento)       // Each Child has one Parent
+       .HasForeignKey(c => c.eventoId) // Explicitly set the FK
+       .OnDelete(DeleteBehavior.Cascade); // Automatically delete children if parent is deleted
+      }
 
 		public DbSet<Apoderado> Apoderados { get; set; }
       public DbSet<ApoderadoUsuario> ApoderadosUsuarios { get; set; }
@@ -64,5 +70,6 @@ namespace ControlOne.AdminService.Data
       public DbSet<TicketControl> TicketsControl { get; set; }
       public DbSet<TicketPrecio> TicketPrecio { get; set; }
 		public DbSet<SimpleAforo> SimpleAforos { get; set; }
+		public DbSet<EventoPromocion> EventosPromocion { get; set; }
 	}
 }

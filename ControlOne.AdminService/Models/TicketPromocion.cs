@@ -15,6 +15,8 @@ namespace ControlOne.AdminService.Models
       public DateTime fecha { get; set; }
       public int adultos { get; set; }
       public int nihos { get; set; }
+      public int ticket3 { get; set; }
+      public int ticket4 { get; set; }
       public string nombre { get; set; }
       public decimal precio { get; set; }
       public string descripcion { get; set; }

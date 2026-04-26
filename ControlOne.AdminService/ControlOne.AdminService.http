@@ -14,3 +14,92 @@ Content-Type: application/json
 }
 
 ###
+
+POST {{ControlOne.AdminService_HostAddress}}/admin/addevento
+Content-Type: application/json
+
+{
+  "id":"0",
+  "lugar": "LUGAR TEST 4",
+  "juego": "JUEGO TEST 4",
+  "aforo": "5000",
+  "fechaInicio": "2026-05-01",
+  "operadorZonaEmail": "operador1@gmail.com",
+  "operadorJuegoEmail": "operador2@gmail.com",
+  "passwordZona": "1234",
+  "passwordJuego": "5678",
+  "cajaInicial": "200",
+  "tarifaMinutos": "30",
+  "tarifaPrecioMinuto": "30",
+  "tarifaPrecioMinutoAdicional": "1",
+  "activo": 1,
+  "ticketDefinicion": "TRIANGULO",
+  "ticketsPromociones": "230|231",
+  "horaInicio": "2000-01-31",
+  "horaFinal": "2000-01-31",
+  "descripcion": "Juego mecánico que desafía la destreza y equilibrio, ideal para jovenes y adultos",
+  "inicio": "2026-05-01",
+  "final": "2026-05-02",
+  "isEntradaOnline": 1,
+  "isCompraDirecta": 1,
+  "promociones": [
+    {
+      "id": "0",
+      "eventoId": "0",
+      "promocionId": "11"
+    },
+    {
+      "id": "0",
+      "eventoId": "0",
+      "promocionId": "13"
+    }
+  ]
+}
+
+###
+
+  POST {{ControlOne.AdminService_HostAddress}}/admin/updateevento
+Content-Type: application/json
+
+{
+  "id":"57",
+  "lugar": "LUGAR TEST VX",
+  "juego": "JUEGO TEST VX_",
+  "aforo": "50",
+  "fechaInicio": "2026-12-12",
+  "operadorZonaEmail": "operador1@gmail.com",
+  "operadorJuegoEmail": "operador2@gmail.com",
+  "passwordZona": "1234",
+  "passwordJuego": "5678",
+  "cajaInicial": "200",
+  "tarifaMinutos": "30",
+  "tarifaPrecioMinuto": "30",
+  "tarifaPrecioMinutoAdicional": "1",
+  "activo": 1,
+  "ticketDefinicion": "TRIANGULO",
+  "ticketsPromociones": "",
+  "horaInicio": "2000-01-31",
+  "horaFinal": "2000-01-31",
+  "descripcion": "Juego mecánico que desafía la destreza y equilibrio, ideal para jovenes y adultos",
+  "inicio": "2026-05-01",
+  "final": "2026-05-02",
+  "isEntradaOnline": 1,
+  "isCompraDirecta": 1,
+  "promociones": [
+     {
+      "id": "0",
+      "eventoId": "57",
+      "promocionId": "23"
+    },
+    {
+      "id": "0",
+      "eventoId": "57",
+      "promocionId": "19"
+    },
+    {
+      "id": "0",
+      "eventoId": "57",
+      "promocionId": "33"
+    }
+  ]
+}

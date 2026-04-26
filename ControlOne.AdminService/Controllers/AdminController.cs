@@ -719,7 +719,64 @@ namespace ControlOne.AdminService.Controllers
             return BadRequest(new { code = 3000, message = "No se pudo guardar el Evento" });
          }
       }
-      void gestionarEventoDB(int tipoAccion, EventoRow evento)
+
+		[HttpPost("addevento")]
+		public async Task<IActionResult> addEvento( EventoORM evento)
+		{
+			try
+			{
+				_context.EventosORM.Add(evento);
+				_context.SaveChanges();
+
+				return Ok(new { code = 1000, message = "Evento agregado" });
+			}
+			catch (Exception e)
+			{
+            return BadRequest(new { code = 3000, message = "No se pudo agregar el Evento" + e.Message });
+			}
+		}
+
+      [HttpPost("updateevento")]
+      public async Task<IActionResult> udpateEvento(EventoORM evento)
+		{
+			try
+			{
+            var dbEvento = _context.EventosORM.Include(e => e.promociones).Single(e => e.id == evento.id);
+
+				_context.Entry(dbEvento).CurrentValues.SetValues(evento);
+
+				foreach (var incomingChild in evento.promociones)
+				{
+					var dbChild = dbEvento.promociones.SingleOrDefault(c => c.id == incomingChild.id);
+					if (dbChild != null)
+					{
+						_context.Entry(dbChild).CurrentValues.SetValues(incomingChild);
+					}
+					else
+					{
+						_context.EventosPromocion.Add(incomingChild);
+					}
+				}
+
+				foreach (var dbChild in dbEvento.promociones.ToList())
+				{
+					if (!evento.promociones.Any(c => c.id == dbChild.id))
+					{
+						_context.EventosPromocion.Remove(dbChild);
+					}
+				}
+
+				_context.SaveChanges();
+
+				return Ok(new { code = 1000, message = "Evento actualizado" });
+			}
+			catch (Exception e)
+			{
+				return BadRequest(new { code = 3000, message = "No se pudo actualizar el Evento" + e.Message });
+			}
+		}
+
+		void gestionarEventoDB(int tipoAccion, EventoRow evento)
       {
          var tipo = new SqlParameter("@tipo", tipoAccion);
          var id = new SqlParameter("@id", evento.id);
@@ -745,8 +802,8 @@ namespace ControlOne.AdminService.Controllers
          var descripcion = new SqlParameter("@descripcion", evento.descripcion);
          var inicio = new SqlParameter("@inicio", evento.inicio);
          var final = new SqlParameter("@final", evento.final);
-            var isEntradaOnline = new SqlParameter("@isEntradaOnline", evento.isEntradaOnline);
-			var isCompraDirecta = new SqlParameter("@isCompraDirecta", evento.isCompraDirecta);
+         var isEntradaOnline = new SqlParameter("@isEntradaOnline", evento.isEntradaOnline);
+         var isCompraDirecta = new SqlParameter("@isCompraDirecta", evento.isCompraDirecta);
 
          var sql = "EXEC dbo.gestionarEvento @tipo,@id,@lugar,@juego,@aforo,@operadorZona,@operadorJuego,@password,@password2,@cajaInicial,@tarifaMinutos,@tarifaPrecioMinuto,@tarifaPrecioMinutoAdicional,@activo,@ticketDefinicion,@ticketsPromociones,@horaInicio,@horaFinal,@descripcion,@inicio,@final,@isEntradaOnline,@isCompraDirecta";
          _context.Database.ExecuteSqlCommand(sql, tipo, id, lugar, juego, aforo, operadorZona, operadorJuego, password, password2, cajaInicial, tarifaMinutos, tarifaPrecioMinuto, tarifaPrecioMinutoAdicional, activo, ticketDefinicion, ticketsPromociones, horaInicio, horaFinal, descripcion, inicio, final, isEntradaOnline, isCompraDirecta);
@@ -958,11 +1015,13 @@ namespace ControlOne.AdminService.Controllers
             var nombre = new SqlParameter("@nombre", promocion.nombre);
             var adultos = new SqlParameter("@adultos", promocion.adultos);
             var nihos = new SqlParameter("@nihos", promocion.nihos);
+            var ticket3 = new SqlParameter("@ticket3", promocion.ticket3);
+            var ticket4 = new SqlParameter("@ticket4", promocion.ticket4);
             var precio = new SqlParameter("@precio", promocion.precio);
             var descripcion = new SqlParameter("@descripcion", promocion.descripcion);
 
-            var sql = "EXEC dbo.gestionarEntradaPromocion @operacion,@id,@eventoId,@tipo,@fecha,@nombre,@adultos,@nihos,@precio,@descripcion";
-            _context.Database.ExecuteSqlCommand(sql, operacion, id, eventoId, tipo, fecha, nombre, adultos, nihos, precio, descripcion);
+            var sql = "EXEC dbo.gestionarEntradaPromocion @operacion,@id,@eventoId,@tipo,@fecha,@nombre,@adultos,@nihos,@ticket3,@ticket4,@precio,@descripcion";
+            _context.Database.ExecuteSqlCommand(sql, operacion, id, eventoId, tipo, fecha, nombre, adultos, nihos, ticket3, ticket4, precio, descripcion);
          }
          catch (Exception)
          {
