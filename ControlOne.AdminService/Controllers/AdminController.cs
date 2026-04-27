@@ -722,7 +722,6 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
-      [AllowAnonymous]
 		[HttpPost("addevento")]
 		public async Task<IActionResult> addEvento( EventoORM evento)
 		{
@@ -760,7 +759,7 @@ namespace ControlOne.AdminService.Controllers
             return BadRequest(new { code = 3000, message = "No se pudo agregar el Evento" + e.Message });
 			}
 		}
-      [AllowAnonymous]
+      
       [HttpPost("updateevento")]
       public async Task<IActionResult> udpateEvento(EventoORM evento)
       {
