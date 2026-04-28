@@ -23,6 +23,10 @@ namespace ControlOne.AdminService.Data
 				 .ToTable("eventoHorario", "dbo")
 				 .HasKey(p => p.eventoId);
 
+			modelBuilder.Entity<TicketPromocion>()
+				 .ToTable("TicketPromocion", "dbo")
+				 .HasKey(p => p.id);
+
 			modelBuilder.Entity<EventoORM>()
        .HasMany(p => p.promociones)     // Parent has many Children
        .WithOne(c => c.evento)       // Each Child has one Parent

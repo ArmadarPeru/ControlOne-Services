@@ -512,9 +512,14 @@ namespace ControlOne.AdminService.Controllers
       {
          try
          {
-            var _eventoId = new SqlParameter("@eventoId", eventoId);
-            var _fecha = new SqlParameter("@fecha", fecha);
-            return _context.TicketPromociones.FromSql("[getTicketPromocionesByEventoIdAndDia] @eventoId, @fecha", _eventoId, _fecha).ToList();
+            var promocionesPorEvento = _context.EventosPromocion.Where(p => p.eventoId == eventoId).Select(p => p.promocionId);
+				var promociones = _context.TicketPromociones.Where(tp => promocionesPorEvento.Contains(tp.id));
+
+            //var _eventoId = new SqlParameter("@eventoId", eventoId);
+            //        var _fecha = new SqlParameter("@fecha", fecha);
+            //        return _context.TicketPromociones.FromSql("[getTicketPromocionesByEventoIdAndDia] @eventoId, @fecha", _eventoId, _fecha).ToList();
+
+            return promociones.ToList();
          }
          catch (Exception e)
          {

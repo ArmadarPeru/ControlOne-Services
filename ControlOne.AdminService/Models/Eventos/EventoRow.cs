@@ -13,7 +13,9 @@ namespace ControlOne.AdminService.Models
       public string lugar { get; set; }
       public string juego { get; set; }
       public int aforo { get; set; }
-      public string operadorZonaEmail { get; set; }
+		public long operadorZonaId { get; set; }
+		public long operadorJuegoId { get; set; }
+		public string operadorZonaEmail { get; set; }
       public string operadorJuegoEmail { get; set; }
       public string password { get; set; }
       public string password2 { get; set; }
