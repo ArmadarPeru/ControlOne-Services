@@ -18,14 +18,16 @@ namespace ControlOne.AdminService.Models
       public int horarioId { get; set; }
       public int usuariosMayor4 { get; set; }
       public int usuariosMenor4 { get; set; }
-      public int montoInt { get; set; }
+		public int ticket3 { get; set; }
+		public int ticket4 { get; set; }
+		public int montoInt { get; set; }
       public decimal montoDec { get; set; }
       public string status { get; set; }
       public DateTime createdOn { get; set; }
       public string token { get; set; }
       public string paymentResponse { get; set; }
       [NotMapped]
-      public string promociones { get; set; }
+      public List<int> promociones { get; set; }
    }
 
    public class IziPayment

@@ -4,12 +4,18 @@ POST {{ControlOne.AdminService_HostAddress}}/admin/paymentorder
 Content-Type: application/json
 {
   "usuarioId": 136466,
-  "eventoId": "41",
-  "eventoFecha": "2026-04-24T04:32:43.584Z",
+  "eventoId": "1",
+  "eventoFecha": "2026-04-28T12:12:01.654Z",
   "usuariosMayor4": 1,
   "usuariosMenor4": 2,
+  "ticket3": 3,
+  "ticket4": 0,
   "usuarioEmail": "jesusalvinoperu@gmail.com",
-  "promociones": "219",
+  "promociones": [
+    3,
+    4,
+    5
+  ],
   "token":''
 }
 

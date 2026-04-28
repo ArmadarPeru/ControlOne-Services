@@ -14,6 +14,7 @@ using Armadar.Helpers;
 using System.Data;
 using Newtonsoft.Json;
 using RestSharp;
+using Microsoft.Extensions.Logging;
 
 namespace ControlOne.AdminService.Controllers
 {
@@ -188,7 +189,7 @@ namespace ControlOne.AdminService.Controllers
                paymentOrder.eventoFecha = evento.inicio;
 				}
 
-				CalcularMonto(paymentOrder);
+            CalcularMonto(paymentOrder);
             AssignUniquePaymentCodigo(paymentOrder);
 
             var culqiCargo = generarCulqiCargo(paymentOrder.token, paymentOrder.montoInt, paymentOrder.usuarioEmail);
@@ -213,7 +214,7 @@ namespace ControlOne.AdminService.Controllers
 
       void CalcularMonto(Payment payment)
       {
-         int adultPrice = 10, kidPrice = 10;
+         int adultPrice = 0, kidPrice = 0, ticket3Price = 0, ticket4Price = 0;
          if (payment.eventoId != 0)
          {
             try
@@ -221,21 +222,25 @@ namespace ControlOne.AdminService.Controllers
                var ticketsInfo = getTicketTiposByEventoIdDB(payment.eventoId);
                if (ticketsInfo.Count == 1)
                {
-                  if (ticketsInfo.FirstOrDefault().tipo == "ADULTO")
-                  {
-                     adultPrice = ticketsInfo.FirstOrDefault().precio;
-                     kidPrice = 0;
-                  }
-                  else
-                  {
-                     adultPrice = 0;
-                     kidPrice = ticketsInfo.FirstOrDefault().precio;
-                  }
+                  adultPrice = ticketsInfo[0].precio;
                }
-               else
+               else if (ticketsInfo.Count == 2)
                {
-                  adultPrice = ticketsInfo.FirstOrDefault().precio;
-                  kidPrice = ticketsInfo[1].precio;
+						adultPrice = ticketsInfo[0].precio;
+						kidPrice = ticketsInfo[1].precio;
+               }
+               else if (ticketsInfo.Count == 3)
+               {
+						adultPrice = ticketsInfo[0].precio;
+						kidPrice = ticketsInfo[1].precio;
+						ticket3Price = ticketsInfo[2].precio;
+               }
+               else if (ticketsInfo.Count == 4)
+               {
+						adultPrice = ticketsInfo[0].precio;
+						kidPrice = ticketsInfo[1].precio;
+						ticket3Price = ticketsInfo[2].precio;
+						ticket4Price = ticketsInfo[3].precio;
                }
             }
             catch (Exception)
@@ -244,23 +249,18 @@ namespace ControlOne.AdminService.Controllers
             }
          }
 
-         decimal promocionesTotal = 0;
-         if (payment.promociones.Length > 0)
-         {
-            string[] promocionesArray = payment.promociones.Split("|");
-            var metaPromociones = getTicketPromocionesAllDB(payment.eventoId, payment.eventoFecha);
+			decimal promocionesTotal = 0;
 
-            foreach (string promocion in promocionesArray)
-            {
-               var matchPromocion = metaPromociones.Where(p => p.id == Convert.ToInt32(promocion)).FirstOrDefault();
-               if (matchPromocion != null)
-               {
-                  promocionesTotal += matchPromocion.precio;
-               }
-            }
+         var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, DateTime.Now);
+
+			if (payment.promociones.Count != promosByEvento.Count()) throw new Exception("Las Promociones no coinciden");
+
+         for (int i = 0; i < payment.promociones.Count; i++)
+         {
+            promocionesTotal += payment.promociones[i] * promosByEvento[i].precio;
          }
 
-         payment.montoDec = (payment.usuariosMayor4 * adultPrice) + (payment.usuariosMenor4 * kidPrice) + promocionesTotal;
+         payment.montoDec = (payment.usuariosMayor4 * adultPrice) + (payment.usuariosMenor4 * kidPrice) + (payment.ticket3 * ticket3Price) + (payment.ticket4 * ticket4Price) + promocionesTotal;
          payment.montoInt = (int)(payment.montoDec * 100);
       }
 
@@ -290,17 +290,19 @@ namespace ControlOne.AdminService.Controllers
          var horarioId = new SqlParameter("@horarioId", payment.horarioId);
          var usuariosMayor4 = new SqlParameter("@usuariosMayor4", payment.usuariosMayor4);
          var usuariosMenor4 = new SqlParameter("@usuariosMenor4", payment.usuariosMenor4);
-         var montoInt = new SqlParameter("@montoInt", payment.montoInt);
+			var ticket3 = new SqlParameter("@ticket3", payment.ticket3);
+			var ticket4 = new SqlParameter("@ticket4", payment.ticket4);
+			var montoInt = new SqlParameter("@montoInt", payment.montoInt);
          var montoDec = new SqlParameter("@montoDec", payment.montoDec);
          var status = new SqlParameter("@status", payment.status);
          var codigo = new SqlParameter("@codigo", payment.codigo);
-         var promociones = new SqlParameter("@promociones", payment.promociones);
+         var promociones = new SqlParameter("@promociones", string.Join("|", payment.promociones));
          var token = new SqlParameter("@token", payment.token);
          var paymentResponse = new SqlParameter("@paymentResponse", payment.paymentResponse);
          var paymentOut = new SqlParameter("@paymentId", SqlDbType.BigInt); paymentOut.Direction = ParameterDirection.Output;
 
-         var sql = "EXEC dbo.insertPayment @usuarioId, @eventoId, @eventoFecha, @horarioId, @usuariosMayor4, @usuariosMenor4, @montoInt, @montoDec, @status, @codigo, @promociones, @token, @paymentResponse, @paymentId OUTPUT";
-         var data = _context.Database.ExecuteSqlCommand(sql, usuarioId, eventoId, eventoFecha, horarioId, usuariosMayor4, usuariosMenor4, montoInt, montoDec, status, codigo, promociones, token, paymentResponse, paymentOut);
+         var sql = "EXEC dbo.insertPayment @usuarioId, @eventoId, @eventoFecha, @horarioId, @usuariosMayor4, @usuariosMenor4, @montoInt, @montoDec, @status, @codigo, @promociones, @token, @paymentResponse, @ticket3, @ticket4, @paymentId OUTPUT";
+         var data = _context.Database.ExecuteSqlCommand(sql, usuarioId, eventoId, eventoFecha, horarioId, usuariosMayor4, usuariosMenor4, montoInt, montoDec, status, codigo, promociones, token, paymentResponse, ticket3, ticket4, paymentOut);
 
          return (long)paymentOut.Value;
       }
@@ -512,14 +514,20 @@ namespace ControlOne.AdminService.Controllers
       {
          try
          {
-            var promocionesPorEvento = _context.EventosPromocion.Where(p => p.eventoId == eventoId).Select(p => p.promocionId);
-				var promociones = _context.TicketPromociones.Where(tp => promocionesPorEvento.Contains(tp.id));
+            var evento = _context.EventosORM.First(e => e.id == eventoId);
 
-            //var _eventoId = new SqlParameter("@eventoId", eventoId);
-            //        var _fecha = new SqlParameter("@fecha", fecha);
-            //        return _context.TicketPromociones.FromSql("[getTicketPromocionesByEventoIdAndDia] @eventoId, @fecha", _eventoId, _fecha).ToList();
-
-            return promociones.ToList();
+            if (evento.isCompraDirecta == 1)
+            {
+               var promocionesPorEvento = _context.EventosPromocion.Where(p => p.eventoId == eventoId).Select(p => p.promocionId);
+               var promociones = _context.TicketPromociones.Where(tp => promocionesPorEvento.Contains(tp.id));
+               return promociones.ToList();
+            }
+            else
+            {
+               var _eventoId = new SqlParameter("@eventoId", eventoId);
+               var _fecha = new SqlParameter("@fecha", fecha);
+               return _context.TicketPromociones.FromSql("[getTicketPromocionesByEventoIdAndDia] @eventoId, @fecha", _eventoId, _fecha).ToList();
+            }
          }
          catch (Exception e)
          {
