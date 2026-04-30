@@ -588,24 +588,24 @@ namespace ControlOne.AdminService.Controllers
          {
             var evento = _context.EventosORM.First(e => e.id == eventoId);
 
-            if (evento.isCompraDirecta == 1)
-            {
-               var promocionesPorEvento = _context.EventosPromocion.Where(p => p.eventoId == eventoId).Select(p => p.promocionId);
-               var promociones = _context.TicketPromociones.Where(tp => promocionesPorEvento.Contains(tp.id));
-               return promociones.ToList();
-            }
-            else
-            {
-               var _eventoId = new SqlParameter("@eventoId", eventoId);
-               var _fecha = new SqlParameter("@fecha", fecha);
-               return _context.TicketPromociones.FromSql("[getTicketPromocionesByEventoIdAndDia] @eventoId, @fecha", _eventoId, _fecha).ToList();
-            }
+            var promocionesPorEvento = _context.EventosPromocion.Where(p => p.eventoId == eventoId).Select(p => p.promocionId).ToList();
+            var promocionesIndividuales = _context.TicketPromociones.Where(tp => promocionesPorEvento.Contains(tp.id)).ToList();
+
+            //TODO : SE PUEDE REFACTORIZAR SOLO CON EF
+            var _eventoId = new SqlParameter("@eventoId", eventoId);
+            var _fecha = new SqlParameter("@fecha", fecha);
+            var promocionesPorEventoyFecha = _context.TicketPromociones.FromSql("[getTicketPromocionesByEventoIdAndDia] @eventoId, @fecha", _eventoId, _fecha).ToList();
+
+            //promocionesIndividuales.AddRange(promocionesPorEventoyFecha); TODO : HACER QUE CONVIVAN AMBAS, EL PROBLEMA VA POR EL INDEX DE CUANTAS SE HAN COMPRADO
+
+            return promocionesIndividuales;
          }
          catch (Exception e)
          {
             return null;
          }
       }
+
       List<TicketPromocion> getTicketPromocionesAllDB(long eventoId, DateTime fecha)
       {
          try
