@@ -7,10 +7,45 @@ using System.Threading.Tasks;
 
 namespace ControlOne.AdminService.Models
 {
-   public class PaymentInfo
+	public class PaymentInfoORM
+	{
+		public long id { get; set; }
+		public long usuarioId { get; set; }
+		public long eventoId { get; set; }
+		public DateTime eventoFecha { get; set; }
+		public int horarioId { get; set; }
+
+		public int usuariosMayor4 { get; set; }
+		public int usuariosMenor4 { get; set; }
+		public int ticket3 { get; set; }
+		public int ticket4 { get; set; }
+
+		
+		public decimal montoDec { get; set; }
+		public int montoInt { get; set; }
+		public string status { get; set; }
+		public string codigo { get; set; }
+		public string promociones { get; set; }
+
+		public int isUsado { get; set; }
+		public string token { get; set; }
+
+		public string paymentResponse { get; set; }
+		public DateTime createdOn { get; set; }
+
+		public EventoORM evento { get; set; }
+
+		[NotMapped]
+		public string estado { get; set; }
+      [NotMapped]
+		public List<PromocionInfo> promocionesList { get; set; }
+	}
+
+	public class PaymentInfo
    {
       public long id { get; set; }
-      public string codigo { get; set; }
+		public long usuarioId { get; set; }
+		public string codigo { get; set; }
       public decimal monto { get; set; }
       public DateTime eventoFecha { get; set; }
       public long eventoId { get; set; }

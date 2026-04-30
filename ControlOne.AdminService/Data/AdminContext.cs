@@ -31,11 +31,15 @@ namespace ControlOne.AdminService.Data
 				 .ToTable("TIcketDefinicion", "dbo")
 				 .HasKey(p => p.id);
 
+         modelBuilder.Entity<PaymentInfoORM>()
+            .ToTable("Payment", "dbo")
+            .HasKey(p => p.id);
+
 			modelBuilder.Entity<EventoORM>()
-       .HasMany(p => p.promociones)     // Parent has many Children
-       .WithOne(c => c.evento)       // Each Child has one Parent
-       .HasForeignKey(c => c.eventoId) // Explicitly set the FK
-       .OnDelete(DeleteBehavior.Cascade); // Automatically delete children if parent is deleted
+            .HasMany(p => p.promociones)     // Parent has many Children
+            .WithOne(c => c.evento)       // Each Child has one Parent
+            .HasForeignKey(c => c.eventoId) // Explicitly set the FK
+            .OnDelete(DeleteBehavior.Cascade); // Automatically delete children if parent is deleted
       }
 
 		public DbSet<Apoderado> Apoderados { get; set; }
@@ -84,5 +88,6 @@ namespace ControlOne.AdminService.Data
 		public DbSet<SimpleAforo> SimpleAforos { get; set; }
 		public DbSet<EventoPromocion> EventosPromocion { get; set; }
 		public DbSet<EventoHorarioORM> EventoHorariosORM { get; set; }
+		public DbSet<PaymentInfoORM> PaymentInfoORMs { get; set; }
 	}
 }

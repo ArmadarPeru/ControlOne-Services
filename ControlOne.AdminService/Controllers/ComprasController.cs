@@ -357,20 +357,92 @@ namespace ControlOne.AdminService.Controllers
             return Ok(new { code = 2000, message = "No se pudo obtener los Izi Tracks" });
          }
       }
-      List<PaymentInfo> myTicketsDB(long userId)
+
+      string getEstado(PaymentInfoORM payment)
+      {
+         if (payment.isUsado == 1)
+            return "USADO";
+         if (payment.isUsado == 0 && (payment.eventoFecha < DateTime.UtcNow.AddHours(-5)))
+            return "VENCIDO";
+         if (payment.isUsado == 0 && (payment.eventoFecha >= DateTime.UtcNow.AddHours(-5)))
+         {
+            return "ACTIVO";
+         }
+         else { return string.Empty; }
+      }
+      string[] getPromocionesArray(string promocionesWithPipe)
+      {
+         return promocionesWithPipe.Split('|');
+      }
+
+      dynamic myTicketsDB(long userId)
       {
          try
          {
-            List<PaymentInfo> result = new List<PaymentInfo>();
-            var _userId = new SqlParameter("@usuarioId", userId);
-            result = _context.PaymentInfos.FromSql("[dbo].[misTickets] @usuarioId", _userId).ToList();
-            foreach (PaymentInfo payment in result)
-            {
-               makeTicketPromocionesList(payment);
-               makeTicketTiposList(payment);
-            }
+            var payments = _context.PaymentInfoORMs.Where(t => t.usuarioId == userId && t.isUsado == 0).Include(ev => ev.evento);
+				var eventosIds = payments.Select(p => p.eventoId).Distinct().ToList();
+            var eventosTipoTickets = payments.Select(p => p.evento.ticketDefinicion).Distinct().ToList();
 
-            return result;
+
+            var tickesDefinicion = _context.TicketTipos.
+               Where(t => eventosTipoTickets.Contains(t.codigo)).
+               ToList();
+
+				var metaEventosPromocion = _context.EventosPromocion.
+					Where(p => eventosIds.Contains(p.eventoId))
+					.ToList();
+
+				var ticketsPromoInfo = _context.TicketPromociones.
+					Where(tp => (metaEventosPromocion.Select(x => x.promocionId)).
+						Contains(tp.id)
+					).ToList();
+
+            var misTickets = payments.
+               Select(pay => new
+               {                  
+						pay.id,
+                  pay.codigo,
+                  monto = pay.montoDec,
+                  pay.eventoId,
+                  pay.eventoFecha,
+                  estado = getEstado(pay),
+                  eventoLugar = pay.evento.lugar,
+                  eventoJuego = pay.evento.juego,
+                  pay.horarioId,
+                  //pay.usuariosMayor4,
+                  //pay.usuariosMenor4,
+                  //pay.ticket3,
+                  //pay.ticket4,
+                  pay.createdOn,
+                  //promocionesflat = pay.promociones,
+						entradas = tickesDefinicion.Where(td => td.codigo == pay.evento.ticketDefinicion).Select((td, index) => new {
+							tipo = td.tipo == "ADULTO" ? "ticket1" : td.tipo == "NOADULTO" ? "ticket2" : td.tipo == "ENTRADA3" ? "ticket3" : "ticket4",
+							td.titulo,
+							count = td.tipo == "ADULTO" ? pay.usuariosMayor4 : td.tipo == "NOADULTO" ? pay.usuariosMenor4 : td.tipo == "ENTRADA3" ? pay.ticket3 : pay.ticket4
+						}).ToList(),
+						promociones = metaEventosPromocion.Where(ep => ep.eventoId == pay.eventoId).Select((y,index) => new { 
+                     y.id,
+							ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().nombre,
+							ticketsPromoInfo.Where(pro=>pro.id == y.promocionId).FirstOrDefault().descripcion,
+                     ticket1= ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().adultos,
+							ticket2 = ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().nihos,
+							ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().ticket3,
+							ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().ticket4,
+                     count = Convert.ToInt32(getPromocionesArray(pay.promociones)[index]),
+						}).ToList()
+               }).ToList().OrderByDescending(o => o.id);
+            return misTickets;                                
+
+            //List<PaymentInfo> result = new List<PaymentInfo>();
+            //var _userId = new SqlParameter("@usuarioId", userId);
+            //result = _context.PaymentInfos.FromSql("[dbo].[misTickets] @usuarioId", _userId).ToList();
+            //foreach (PaymentInfo payment in result)
+            //{
+            //   makeTicketPromocionesList(payment);
+            //   makeTicketTiposList(payment);
+            //}
+
+            //return result;
          }
          catch (Exception e)
          {

@@ -5,16 +5,16 @@ Content-Type: application/json
 {
   "usuarioId": 136466,
   "eventoId": "1",
-  "eventoFecha": "2026-04-28T12:12:01.654Z",
+  "eventoFecha": "2026-04-28T13:48:34.451Z",
   "usuariosMayor4": 1,
   "usuariosMenor4": 2,
-  "ticket3": 3,
+  "ticket3": 4,
   "ticket4": 0,
   "usuarioEmail": "jesusalvinoperu@gmail.com",
   "promociones": [
-    3,
-    4,
-    5
+    2,
+    2,
+    2
   ],
   "token":''
 }
@@ -101,3 +101,8 @@ Content-Type: application/json
     }
   ]
 }
+
+###
+
+@usuarioId=136466
+GET {{ControlOne.AdminService_HostAddress}}/admin/mistickets/{{usuarioId}}
