@@ -294,33 +294,37 @@ namespace ControlOne.AdminService.Controllers
             {
 
             }
-         }         
+         }
 
 			// Calcular Promociones
 
-			var selectedPromosInfo = payment.promociones.Split('|');
 			decimal promocionesTotal = 0;
 
-			if (selectedPromosInfo.Any())
+			if (payment.promociones.Length>0)
          {
-            var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, DateTime.UtcNow.AddHours(-5));
+				var selectedPromosInfo = payment.promociones.Split('|');				
 
-				//if (payment.promociones.Count != promosByEvento.Count()) throw new Exception("Las Promociones no coinciden");
-           
-				for (int i = 0; i < selectedPromosInfo.Length; i++)
+				if (selectedPromosInfo.Any())
 				{
-               var selectedPromoInfo = selectedPromosInfo[i].Split(',');
-               int promoId = int.Parse(selectedPromoInfo[0]);
-					int promoCount = int.Parse(selectedPromoInfo[1]);
-               if (promoCount > 0)
-               {
-                  var oPromo = promosByEvento.Find(pro => pro.id == promoId);
+					var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, DateTime.UtcNow.AddHours(-5));
 
-                  promocionesTotal += oPromo.precio * promoCount;
-                  payment.cantidad += (oPromo.adultos + oPromo.nihos + oPromo.ticket3 + oPromo.ticket4) * promoCount;
-               }
+					//if (payment.promociones.Count != promosByEvento.Count()) throw new Exception("Las Promociones no coinciden");
+
+					for (int i = 0; i < selectedPromosInfo.Length; i++)
+					{
+						var selectedPromoInfo = selectedPromosInfo[i].Split(',');
+						int promoId = int.Parse(selectedPromoInfo[0]);
+						int promoCount = int.Parse(selectedPromoInfo[1]);
+						if (promoCount > 0)
+						{
+							var oPromo = promosByEvento.Find(pro => pro.id == promoId);
+
+							promocionesTotal += oPromo.precio * promoCount;
+							payment.cantidad += (oPromo.adultos + oPromo.nihos + oPromo.ticket3 + oPromo.ticket4) * promoCount;
+						}
+					}
 				}
-			}
+			}			
 
 			payment.cantidad += payment.usuariosMayor4 + payment.usuariosMenor4 + payment.ticket3 + payment.ticket4;
 
