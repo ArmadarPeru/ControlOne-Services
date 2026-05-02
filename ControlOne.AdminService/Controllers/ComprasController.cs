@@ -302,8 +302,8 @@ namespace ControlOne.AdminService.Controllers
 			decimal promocionesTotal = 0;
 
 			if (selectedPromosInfo.Any())
-         {				
-				var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, DateTime.Now);
+         {
+            var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, DateTime.UtcNow.AddHours(-5));
 
 				//if (payment.promociones.Count != promosByEvento.Count()) throw new Exception("Las Promociones no coinciden");
            
@@ -312,10 +312,13 @@ namespace ControlOne.AdminService.Controllers
                var selectedPromoInfo = selectedPromosInfo[i].Split(',');
                int promoId = int.Parse(selectedPromoInfo[0]);
 					int promoCount = int.Parse(selectedPromoInfo[1]);
-               var oPromo = promosByEvento.Find(pro => pro.id == promoId);
+               if (promoCount > 0)
+               {
+                  var oPromo = promosByEvento.Find(pro => pro.id == promoId);
 
-					promocionesTotal += oPromo.precio * promoCount;
-               payment.cantidad += (oPromo.adultos + oPromo.nihos + oPromo.ticket3 + oPromo.ticket4) * promoCount;               
+                  promocionesTotal += oPromo.precio * promoCount;
+                  payment.cantidad += (oPromo.adultos + oPromo.nihos + oPromo.ticket3 + oPromo.ticket4) * promoCount;
+               }
 				}
 			}
 
