@@ -110,3 +110,10 @@ GET {{ControlOne.AdminService_HostAddress}}/admin/mistickets/{{usuarioId}}
 GET {{ControlOne.AdminService_HostAddress}}/admin/eventohorarios/{{evento}}/{{pipedFecha}}
 
 
+###
+
+@evento=1
+@pipedFecha=02|05|2026
+GET {{ControlOne.AdminService_HostAddress}}/admin/ticketspromociones/{{evento}}/{{pipedFecha}}
+
+

@@ -46,7 +46,30 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
+      /*
       [AllowAnonymous]
+      [HttpGet("getevento/{eventoid}")]
+      public IActionResult getEvento(long eventoid)
+      {
+         dynamic response = new System.Dynamic.ExpandoObject();
+
+         var evento = _context.EventosORM.First(e => e.id == eventoid);
+         var oEvento = new
+         {
+            evento.id,
+            evento.lugar,
+            evento.juego,
+            evento.descripcion,
+            evento.inicio,
+            evento.final,
+            evento.isCompraDirecta
+         };
+         response.evento = oEvento;
+         return Ok(response);
+      }
+      */
+
+		[AllowAnonymous]
       [HttpGet("eventohorarios/{evento}/{pipedFecha}")]
       public async Task<IActionResult> getHorariosEvento(long evento, string pipedFecha)
       {
@@ -151,55 +174,7 @@ namespace ControlOne.AdminService.Controllers
          {
             return null;
          }
-      }
-
-		[AllowAnonymous]
-      [HttpGet("_paymentorder_|/_DEPRECATED{token}")]
-      public async Task<IActionResult> paymentOrder_(string token)
-      {
-         try
-         {
-            if (token != string.Empty)
-            {
-               string llavePrivada = "sk_live_1854910889cd0bf3";
-               var client = new RestClient("https://api.culqi.com/v2/charges");
-               var request = new RestRequest(Method.POST);
-               request.AddHeader("Authorization", "Bearer " + llavePrivada);
-               request.AddHeader("content-type", "application/json");
-
-               var culquiChargeRequest = new CulqiChargeRequest
-               {
-                  source_id = token,
-                  amount = 660,
-                  currency_code = "PEN",
-                  email = "test@test.com"
-               };
-
-               string planeCulqiChargeRequest = JsonConvert.SerializeObject(culquiChargeRequest);
-               request.AddParameter("application/json", planeCulqiChargeRequest, ParameterType.RequestBody);
-               IRestResponse response = client.Execute(request);
-
-               // Save the content anyway
-
-               if (response.IsSuccessful && response.StatusCode == System.Net.HttpStatusCode.Created)
-               {
-                  return Ok(new { code = 1000, message = "El Cargo ha sido procesado" });
-               }
-               else
-               {
-                  return Ok(new { code = 4000, message = "El Cargo no se pudo procesar" });
-               }
-            }
-            else
-            {
-               return Ok(new { code = 3000, message = "No se pudo procesar el Token, es invalido" });
-            }
-         }
-         catch (Exception e)
-         {
-            return Ok(new { code = 2000, message = "No se pudo procesar el Token " + e.Message });
-         }
-      }
+      }		
 
       private Tuple<bool, string> generarCulqiCargo(string token, int monto, string email)
       {
@@ -207,7 +182,10 @@ namespace ControlOne.AdminService.Controllers
 
          try
          {
-            string llavePrivada = "sk_live_1854910889cd0bf3";
+            string llaveprivada_PRD = "sk_live_1854910889cd0bf3";
+            string llavePrivada_TEST = "sk_test_GlLVNypqgJF2aWzX";
+
+				string llavePrivada = llavePrivada_TEST;
             var client = new RestClient("https://api.culqi.com/v2/charges");
             var request = new RestRequest(Method.POST);
             request.AddHeader("Authorization", "Bearer " + llavePrivada);
@@ -699,7 +677,7 @@ namespace ControlOne.AdminService.Controllers
             var _fecha = new SqlParameter("@fecha", fecha);
             var promocionesPorEventoyFecha = _context.TicketPromociones.FromSql("[getTicketPromocionesByEventoIdAndDia] @eventoId, @fecha", _eventoId, _fecha).ToList();
 
-            //promocionesIndividuales.AddRange(promocionesPorEventoyFecha); TODO : HACER QUE CONVIVAN AMBAS, EL PROBLEMA VA POR EL INDEX DE CUANTAS SE HAN COMPRADO
+            promocionesIndividuales.AddRange(promocionesPorEventoyFecha);
 
             return promocionesIndividuales;
          }
