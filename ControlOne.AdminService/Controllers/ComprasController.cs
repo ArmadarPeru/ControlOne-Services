@@ -306,7 +306,7 @@ namespace ControlOne.AdminService.Controllers
 
 				if (selectedPromosInfo.Any())
 				{
-					var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, DateTime.UtcNow.AddHours(-5));
+					var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, payment.eventoFecha);
 
 					//if (payment.promociones.Count != promosByEvento.Count()) throw new Exception("Las Promociones no coinciden");
 
