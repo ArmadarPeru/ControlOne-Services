@@ -37,4 +37,11 @@ namespace ControlOne.AdminService.Models
       public decimal precio { get; set; }
       public string descripcion { get; set; }
    }
+
+	public class PromoBought
+	{
+		public long paymentId { get; set; }
+		public int promoId { get; set; }
+		public int count { get; set; }
+	}
 }

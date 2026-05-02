@@ -24,10 +24,11 @@ namespace ControlOne.AdminService.Models
       public decimal montoDec { get; set; }
       public string status { get; set; }
       public DateTime createdOn { get; set; }
-      public string token { get; set; }
+      public string token { get; set; } = string.Empty;
       public string paymentResponse { get; set; }
       [NotMapped]
-      public List<int> promociones { get; set; }
+      public string promociones { get; set; }
+      public int cantidad { get; set; } = 0;
    }
 
    public class IziPayment

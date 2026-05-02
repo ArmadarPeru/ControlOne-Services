@@ -33,6 +33,8 @@ namespace ControlOne.AdminService.Models
 		public string paymentResponse { get; set; }
 		public DateTime createdOn { get; set; }
 
+		public int cantidad { get; set; }
+
 		public EventoORM evento { get; set; }
 
 		[NotMapped]

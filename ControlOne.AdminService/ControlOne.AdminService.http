@@ -5,18 +5,14 @@ Content-Type: application/json
 {
   "usuarioId": 136466,
   "eventoId": "1",
-  "eventoFecha": "2026-04-28T13:48:34.451Z",
+  "eventoFecha": "2026-05-01T17:56:16.663Z",
+  "horarioId": 0,
   "usuariosMayor4": 1,
-  "usuariosMenor4": 2,
-  "ticket3": 4,
+  "usuariosMenor4": 0,
+  "ticket3": 1,
   "ticket4": 0,
   "usuarioEmail": "jesusalvinoperu@gmail.com",
-  "promociones": [
-    2,
-    2,
-    2
-  ],
-  "token":''
+  "promociones": "230,1|231,1"
 }
 
 ###
@@ -106,3 +102,11 @@ Content-Type: application/json
 
 @usuarioId=136466
 GET {{ControlOne.AdminService_HostAddress}}/admin/mistickets/{{usuarioId}}
+
+###
+
+@evento=1
+@pipedFecha=02|05|2026
+GET {{ControlOne.AdminService_HostAddress}}/admin/eventohorarios/{{evento}}/{{pipedFecha}}
+
+

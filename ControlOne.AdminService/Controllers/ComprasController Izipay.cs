@@ -194,7 +194,7 @@ namespace ControlOne.AdminService.Controllers
             if (paymentOrder != null) // Validar integridad de cada propiedad desde la UI
             {
                 paymentOrder.eventoFecha = paymentOrder.eventoFecha.ToUniversalTime().AddHours(-5);
-                CalcularMonto(paymentOrder);
+                CalcularMontoyCantidad(paymentOrder);
                 AssignUniquePaymentCodigo(paymentOrder);
                 long orderId = insertPaymentDB(paymentOrder);
 

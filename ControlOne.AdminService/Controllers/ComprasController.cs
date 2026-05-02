@@ -15,6 +15,7 @@ using System.Data;
 using Newtonsoft.Json;
 using RestSharp;
 using Microsoft.Extensions.Logging;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace ControlOne.AdminService.Controllers
 {
@@ -64,9 +65,60 @@ namespace ControlOne.AdminService.Controllers
       {
          try
          {
-            var _eventoId = new SqlParameter("@eventoId", eventoId);
+            var evento = _context.EventosORM.First(e => e.id == eventoId);
+            DateTime inicio = evento.horaInicio, final = evento.horaFinal;
+            TimeSpan diferencia = final - inicio;
+
+            List<EventoHorario> horariosInfo = new List<EventoHorario>();
+
+            var mediasHoras = diferencia.TotalHours * 2;
+
+            for (int i = 0; i < mediasHoras; i++)
+            {
+               horariosInfo.Add(new EventoHorario()
+               {
+                  id = i == 0 ? int.Parse((inicio.Hour.ToString("00") + inicio.Minute.ToString("00"))) : int.Parse((horariosInfo[i - 1].inicio.AddMinutes(30).Hour.ToString("00") + (horariosInfo[i - 1].inicio.AddMinutes(30).Minute.ToString("00")))),
+                  inicio = i == 0 ? inicio : horariosInfo[i - 1].inicio.AddMinutes(30),
+						isSeleccionable = 1,
+						aforo = evento.aforo,                  
+                  vacantes = evento.aforo
+               });
+            }
+
+            foreach (var h in horariosInfo)
+            {
+               if (eventoFecha.Date == DateTime.UtcNow.AddHours(-5))
+               {
+						h.isSeleccionable = h.inicio.TimeOfDay < DateTime.UtcNow.AddHours(-5).AddMinutes(-15).TimeOfDay ? 0 : 1;
+					}               
+            }
+
+            var paysByHorarios = _context.PaymentInfoORMs.Where(pay => pay.eventoId == eventoId && pay.eventoFecha.Date == eventoFecha.Date && pay.horarioId != 0 && pay.status == "PAID").
+               GroupBy(pay => pay.horarioId).
+               Select(g => new
+               {
+                  horarioId= g.Key,
+                  totalCount =g.Sum(x=>x.cantidad)
+               }).ToList();
+
+				foreach (var h in horariosInfo)
+				{
+               if (h.isSeleccionable == 1 || 1 == 1)
+               {
+                  if (paysByHorarios.Select(x => x.horarioId).Contains(h.id))
+                  {
+                     h.aforo = evento.aforo;
+                     h.vacantes = evento.aforo - paysByHorarios.First(p => p.horarioId == h.id).totalCount;
+						}
+               }
+				}
+
+            return horariosInfo;
+            /* TODO DELETE REPLACED BY ABOVE EF
+				var _eventoId = new SqlParameter("@eventoId", eventoId);
             var _eventoFecha = new SqlParameter("@eventoFecha", eventoFecha);
             return _context.EventoHorarios.FromSql("[dbo].[getHorariosByEventoId] @eventoId,@eventoFecha", _eventoId, _eventoFecha).ToList();
+            */
          }
          catch (Exception e)
          {
@@ -74,18 +126,32 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
-		SimpleAforo getSimpleAforoDB(long eventoId)
-		{
-			try
-			{
+      SimpleAforo getSimpleAforoDB(long eventoId)
+      {
+         try
+         {
+            var evento = _context.EventosORM.First(e => e.id == eventoId);
+            var ocupados = _context.PaymentInfoORMs.
+               Where(pay => pay.eventoId == eventoId && pay.status == "PAID").
+               Sum(p => p.cantidad);
+
+            return new SimpleAforo()
+            {
+               aforo = evento.aforo,
+               ocupados = ocupados,
+               disponible = evento.aforo - ocupados,
+               id = 1
+            };
+            /* TODO TO REMOVE BY EF USAGE
 				var _eventoId = new SqlParameter("@eventoId", eventoId);
 				return _context.SimpleAforos.FromSql("[dbo].[geAforoByEventoId] @eventoId", _eventoId).ToList().FirstOrDefault();
-			}
-			catch (Exception e)
-			{
-				return null;
-			}
-		}
+            */
+         }
+         catch (Exception e)
+         {
+            return null;
+         }
+      }
 
 		[AllowAnonymous]
       [HttpGet("_paymentorder_|/_DEPRECATED{token}")]
@@ -189,7 +255,7 @@ namespace ControlOne.AdminService.Controllers
                paymentOrder.eventoFecha = evento.inicio;
 				}
 
-            CalcularMonto(paymentOrder);
+            CalcularMontoyCantidad(paymentOrder);
             AssignUniquePaymentCodigo(paymentOrder);
 
             var culqiCargo = generarCulqiCargo(paymentOrder.token, paymentOrder.montoInt, paymentOrder.usuarioEmail);
@@ -212,14 +278,17 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
-      void CalcularMonto(Payment payment)
+      void CalcularMontoyCantidad(Payment payment)
       {
+         // Calcular Entradas individuales
+
          int adultPrice = 0, kidPrice = 0, ticket3Price = 0, ticket4Price = 0;
          if (payment.eventoId != 0)
          {
             try
             {
                var ticketsInfo = getTicketTiposByEventoIdDB(payment.eventoId);
+
                if (ticketsInfo.Count == 1)
                {
                   adultPrice = ticketsInfo[0].precio;
@@ -247,20 +316,35 @@ namespace ControlOne.AdminService.Controllers
             {
 
             }
-         }
+         }         
 
+			// Calcular Promociones
+
+			var selectedPromosInfo = payment.promociones.Split('|');
 			decimal promocionesTotal = 0;
 
-         var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, DateTime.Now);
+			if (selectedPromosInfo.Any())
+         {				
+				var promosByEvento = getTicketPromocionesByEventoIdAndDiaDB(payment.eventoId, DateTime.Now);
 
-			if (payment.promociones.Count != promosByEvento.Count()) throw new Exception("Las Promociones no coinciden");
+				//if (payment.promociones.Count != promosByEvento.Count()) throw new Exception("Las Promociones no coinciden");
+           
+				for (int i = 0; i < selectedPromosInfo.Length; i++)
+				{
+               var selectedPromoInfo = selectedPromosInfo[i].Split(',');
+               int promoId = int.Parse(selectedPromoInfo[0]);
+					int promoCount = int.Parse(selectedPromoInfo[1]);
+               var oPromo = promosByEvento.Find(pro => pro.id == promoId);
 
-         for (int i = 0; i < payment.promociones.Count; i++)
-         {
-            promocionesTotal += payment.promociones[i] * promosByEvento[i].precio;
-         }
+					promocionesTotal += oPromo.precio * promoCount;
+               payment.cantidad += (oPromo.adultos + oPromo.nihos + oPromo.ticket3 + oPromo.ticket4) * promoCount;               
+				}
+			}
 
-         payment.montoDec = (payment.usuariosMayor4 * adultPrice) + (payment.usuariosMenor4 * kidPrice) + (payment.ticket3 * ticket3Price) + (payment.ticket4 * ticket4Price) + promocionesTotal;
+			payment.cantidad += payment.usuariosMayor4 + payment.usuariosMenor4 + payment.ticket3 + payment.ticket4;
+
+			payment.montoDec = (payment.usuariosMayor4 * adultPrice) + (payment.usuariosMenor4 * kidPrice) + (payment.ticket3 * ticket3Price) + (payment.ticket4 * ticket4Price) + 
+            promocionesTotal;
          payment.montoInt = (int)(payment.montoDec * 100);
       }
 
@@ -298,11 +382,12 @@ namespace ControlOne.AdminService.Controllers
          var codigo = new SqlParameter("@codigo", payment.codigo);
          var promociones = new SqlParameter("@promociones", string.Join("|", payment.promociones));
          var token = new SqlParameter("@token", payment.token);
-         var paymentResponse = new SqlParameter("@paymentResponse", payment.paymentResponse);
+			var cantidad = new SqlParameter("@cantidad", payment.cantidad);
+			var paymentResponse = new SqlParameter("@paymentResponse", payment.paymentResponse);
          var paymentOut = new SqlParameter("@paymentId", SqlDbType.BigInt); paymentOut.Direction = ParameterDirection.Output;
 
-         var sql = "EXEC dbo.insertPayment @usuarioId, @eventoId, @eventoFecha, @horarioId, @usuariosMayor4, @usuariosMenor4, @montoInt, @montoDec, @status, @codigo, @promociones, @token, @paymentResponse, @ticket3, @ticket4, @paymentId OUTPUT";
-         var data = _context.Database.ExecuteSqlCommand(sql, usuarioId, eventoId, eventoFecha, horarioId, usuariosMayor4, usuariosMenor4, montoInt, montoDec, status, codigo, promociones, token, paymentResponse, ticket3, ticket4, paymentOut);
+         var sql = "EXEC dbo.insertPayment @usuarioId, @eventoId, @eventoFecha, @horarioId, @usuariosMayor4, @usuariosMenor4, @montoInt, @montoDec, @status, @codigo, @promociones, @token, @paymentResponse, @ticket3, @ticket4, @cantidad, @paymentId OUTPUT";
+         var data = _context.Database.ExecuteSqlCommand(sql, usuarioId, eventoId, eventoFecha, horarioId, usuariosMayor4, usuariosMenor4, montoInt, montoDec, status, codigo, promociones, token, paymentResponse, ticket3, ticket4, cantidad, paymentOut);
 
          return (long)paymentOut.Value;
       }
@@ -370,21 +455,38 @@ namespace ControlOne.AdminService.Controllers
          }
          else { return string.Empty; }
       }
-      string[] getPromocionesArray(string promocionesWithPipe)
-      {
-         return promocionesWithPipe.Split('|');
-      }
 
       dynamic myTicketsDB(long userId)
       {
          try
          {
-            var payments = _context.PaymentInfoORMs.Where(t => t.usuarioId == userId && t.isUsado == 0).Include(ev => ev.evento);
-				var eventosIds = payments.Select(p => p.eventoId).Distinct().ToList();
+            var payments = _context.PaymentInfoORMs.Where(pay => pay.usuarioId == userId && pay.status == "PAID" && pay.isUsado == 0).Include(ev => ev.evento).ToList();				
             var eventosTipoTickets = payments.Select(p => p.evento.ticketDefinicion).Distinct().ToList();
 
+				var bougthPromos = new List<PromoBought>();
 
-            var tickesDefinicion = _context.TicketTipos.
+            for (int i = 0; i < payments.Count; i++)
+            {
+               if (payments[i].promociones.Length > 0)
+               {
+                  var promos = payments[i].promociones.Split('|');
+                  foreach (var promoFlat in promos)
+                  {
+                     var promoInfo = promoFlat.Split(',');
+                     bougthPromos.Add(new
+                     PromoBought
+                     {
+                        paymentId = payments[i].id,
+                        promoId = int.Parse(promoInfo[0]),
+                        count = int.Parse(promoInfo[1])
+                     });
+                  }
+               }
+            }
+
+				var eventosIds = payments.Select(p => p.eventoId).Distinct().ToList();
+
+				var tickesDefinicion = _context.TicketTipos.
                Where(t => eventosTipoTickets.Contains(t.codigo)).
                ToList();
 
@@ -393,7 +495,7 @@ namespace ControlOne.AdminService.Controllers
 					.ToList();
 
 				var ticketsPromoInfo = _context.TicketPromociones.
-					Where(tp => (metaEventosPromocion.Select(x => x.promocionId)).
+					Where(tp => (bougthPromos.Select(x => x.promoId)).
 						Contains(tp.id)
 					).ToList();
 
@@ -420,15 +522,16 @@ namespace ControlOne.AdminService.Controllers
 							td.titulo,
 							count = td.tipo == "ADULTO" ? pay.usuariosMayor4 : td.tipo == "NOADULTO" ? pay.usuariosMenor4 : td.tipo == "ENTRADA3" ? pay.ticket3 : pay.ticket4
 						}).ToList(),
-						promociones = metaEventosPromocion.Where(ep => ep.eventoId == pay.eventoId).Select((y,index) => new { 
-                     y.id,
-							ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().nombre,
-							ticketsPromoInfo.Where(pro=>pro.id == y.promocionId).FirstOrDefault().descripcion,
-                     ticket1= ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().adultos,
-							ticket2 = ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().nihos,
-							ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().ticket3,
-							ticketsPromoInfo.Where(pro => pro.id == y.promocionId).FirstOrDefault().ticket4,
-                     count = Convert.ToInt32(getPromocionesArray(pay.promociones)[index]),
+						promociones = bougthPromos.Where(bPromo => bPromo.paymentId == pay.id).Select((boughtPromo,index) => new { 
+                     id = boughtPromo.paymentId,
+                     boughtPromo.promoId,
+							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nombre,
+							ticketsPromoInfo.Where(pro=>pro.id == boughtPromo.promoId).FirstOrDefault().descripcion,
+                     ticket1= ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().adultos,
+							ticket2 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nihos,
+							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket3,
+							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket4,
+                     boughtPromo.count,
 						}).ToList()
                }).ToList().OrderByDescending(o => o.id);
             return misTickets;                                
