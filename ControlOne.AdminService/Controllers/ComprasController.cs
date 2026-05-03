@@ -510,13 +510,13 @@ namespace ControlOne.AdminService.Controllers
                      id = boughtPromo.paymentId,
                      boughtPromo.promoId,
 							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nombre,
-							//ticketsPromoInfo.Where(pro=>pro.id == boughtPromo.promoId).FirstOrDefault().descripcion,
-       //              ticket1= ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().adultos,
-							//ticket2 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nihos,
-							//ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket3,
-							//ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket4,
-       //              boughtPromo.count,
-						}).ToList()
+                     ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().descripcion,
+                     ticket1 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().adultos,
+                     ticket2 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nihos,
+                     ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket3,
+                     ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket4,
+                     boughtPromo.count,
+                  }).ToList()
                }).ToList().OrderByDescending(o => o.id);
             return misTickets;                                
 

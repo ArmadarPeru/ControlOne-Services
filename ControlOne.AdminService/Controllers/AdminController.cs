@@ -1457,6 +1457,13 @@ namespace ControlOne.AdminService.Controllers
       {
          try
          {
+            var paysThanUsingPromo = _context.PaymentInfoORMs.Any(pay => pay.promociones.Contains(promocionid.ToString()));
+				if (paysThanUsingPromo)
+				{
+					OperacionResultado resultIsUsado = new OperacionResultado() { id = 1, resultado = 0, mensaje = "No se puede Eliminar la Promocion porque ya ha sido comprada" };
+					return Ok(new { resultado = resultIsUsado });
+				}								
+				
             OperacionResultado result = eliminarTicketPromocionDB(promocionid);
             return Ok(new { resultado = result });
          }
