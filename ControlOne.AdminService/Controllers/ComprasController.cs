@@ -458,13 +458,16 @@ namespace ControlOne.AdminService.Controllers
                   foreach (var promoFlat in promos)
                   {
                      var promoInfo = promoFlat.Split(',');
-                     bougthPromos.Add(new
-                     PromoBought
+                     if (int.Parse(promoInfo[1]) > 0)
                      {
-                        paymentId = payments[i].id,
-                        promoId = int.Parse(promoInfo[0]),
-                        count = int.Parse(promoInfo[1])
-                     });
+                        bougthPromos.Add(new
+                           PromoBought
+                           {
+                              paymentId = payments[i].id,
+                              promoId = int.Parse(promoInfo[0]),
+                              count = int.Parse(promoInfo[1])
+                           });
+                     }
                   }
                }
             }
@@ -474,10 +477,6 @@ namespace ControlOne.AdminService.Controllers
 				var tickesDefinicion = _context.TicketTipos.
                Where(t => eventosTipoTickets.Contains(t.codigo)).
                ToList();
-
-				var metaEventosPromocion = _context.EventosPromocion.
-					Where(p => eventosIds.Contains(p.eventoId))
-					.ToList();
 
 				var ticketsPromoInfo = _context.TicketPromociones.
 					Where(tp => (bougthPromos.Select(x => x.promoId)).
@@ -511,12 +510,12 @@ namespace ControlOne.AdminService.Controllers
                      id = boughtPromo.paymentId,
                      boughtPromo.promoId,
 							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nombre,
-							ticketsPromoInfo.Where(pro=>pro.id == boughtPromo.promoId).FirstOrDefault().descripcion,
-                     ticket1= ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().adultos,
-							ticket2 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nihos,
-							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket3,
-							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket4,
-                     boughtPromo.count,
+							//ticketsPromoInfo.Where(pro=>pro.id == boughtPromo.promoId).FirstOrDefault().descripcion,
+       //              ticket1= ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().adultos,
+							//ticket2 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nihos,
+							//ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket3,
+							//ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket4,
+       //              boughtPromo.count,
 						}).ToList()
                }).ToList().OrderByDescending(o => o.id);
             return misTickets;                                
