@@ -42,6 +42,19 @@ namespace ControlOne.AdminService.Models
 	{
 		public long paymentId { get; set; }
 		public int promoId { get; set; }
-		public int count { get; set; }
+		public int cantidad { get; set; }
+	}
+
+   public class PromoControl
+   {
+		public long id { get; set; }
+		public int promoId { get; set; }
+		public string nombre { get; set; }
+		public string descripcion { get; set; }
+		public int ticket1 { get; set; }
+		public int ticket2 { get; set; }
+		public int ticket3 { get; set; }
+		public int ticket4 { get; set; }
+		public int cantidad { get; set; }
 	}
 }

@@ -31,4 +31,30 @@ namespace ControlOne.AdminService.Models
       public int nihosGroup { get; set; }
       public decimal monto { get; set; }
    }
+
+   public class TicketControl2
+   {
+      public long id { get; set; }
+      public String codigo { get; set; }
+      public int horarioId { get; set; }
+      public string estado { get; set; }
+
+      public string nombres { get; set; }
+      public string dni { get; set; }
+      public long usuarioId { get; set; }
+
+      public bool isUsado { get; set; }
+      public bool isUsuarioRegistrado { get; set; }
+      public decimal monto { get; set; }
+      public int cantidad { get; set; }
+      public List<EntradaControl> entradas { get; set; } = new List<EntradaControl>();
+		public List<PromoControl> promociones { get; set; } = new List<PromoControl>();
+	}
+
+   public class GroupedTicket
+   {
+      public int horarioId { get; set; }
+      public List<TicketControl2> tickets { get; set; } = new List<TicketControl2>();
+		public int cantidad { get; set; }
+	}
 }

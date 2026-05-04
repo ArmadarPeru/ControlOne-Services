@@ -465,7 +465,7 @@ namespace ControlOne.AdminService.Controllers
                            {
                               paymentId = payments[i].id,
                               promoId = int.Parse(promoInfo[0]),
-                              count = int.Parse(promoInfo[1])
+                              cantidad = int.Parse(promoInfo[1])
                            });
                      }
                   }
@@ -509,13 +509,13 @@ namespace ControlOne.AdminService.Controllers
 						promociones = bougthPromos.Where(bPromo => bPromo.paymentId == pay.id).Select((boughtPromo,index) => new { 
                      id = boughtPromo.paymentId,
                      boughtPromo.promoId,
-							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nombre,
+                     ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nombre,
                      ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().descripcion,
                      ticket1 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().adultos,
                      ticket2 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nihos,
                      ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket3,
                      ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket4,
-                     boughtPromo.count,
+                     boughtPromo.cantidad,
                   }).ToList()
                }).ToList().OrderByDescending(o => o.id);
             return misTickets;                                
@@ -714,11 +714,10 @@ namespace ControlOne.AdminService.Controllers
          try
          {
             string[] granularDate = pipedFecha.Split("|");
-            DateTime fecha = new DateTime(Convert.ToInt32(granularDate[2]), Convert.ToInt32(granularDate[1]), Convert.ToInt32(granularDate[0]));
-
-            List<TicketControl> rawTickets = getTicketsControlHoyByEventoDB(eventoId, fecha);
-            CheckGroups(rawTickets);
-            return Ok(new { code = 1000, message = "Tickets para Control por Evento", tickets = rawTickets });
+            DateTime fecha = new DateTime(Convert.ToInt32(granularDate[2]), Convert.ToInt32(granularDate[1]), Convert.ToInt32(granularDate[0]));           
+            
+            var ticketsControl = groupTickets(ticketsByEventoAndDia(eventoId, fecha));
+            return Ok(new { code = 1000, message = "Tickets para Control por Evento", tickets = ticketsControl });
          }
          catch (Exception e)
          {
@@ -726,94 +725,213 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
-      private void CheckGroups(List<TicketControl> tickets)
+      List<TicketControl2> makeExplicitTickets(dynamic dynamicTickets)
       {
-         List<int> horariosGroup = new List<int>();
-         foreach (var t in tickets)
+         List<TicketControl2> result = new List<TicketControl2>();
+         foreach (dynamic dynTicket in dynamicTickets)
          {
-            if (!horariosGroup.Contains(t.horarioId))
+            result.Add(new TicketControl2()
             {
-               horariosGroup.Add(t.horarioId);
-            }
+               id = dynTicket.id,
+               codigo = dynTicket.codigo,
+               horarioId = dynTicket.horarioId,
+               estado = dynTicket.estado,
+               nombres = dynTicket.nombres,
+               dni = dynTicket.dni,
+               usuarioId = dynTicket.usuarioId,
+               isUsado = Convert.ToBoolean(dynTicket.isUsado),
+               isUsuarioRegistrado = Convert.ToBoolean(dynTicket.isUsuarioRegistrado),
+               cantidad = dynTicket.cantidad,
+               monto = dynTicket.monto,
+               entradas = makeEntradas(dynTicket.entradas),
+               promociones = makePromos(dynTicket.promociones)
+            });
          }
-         List<TicketGroup> ticketGroups = new List<TicketGroup>();
-         foreach (var group in horariosGroup)
-         {
-            ticketGroups.Add(new TicketGroup() { id = group, items = new List<long>() });
-         }
-
-         foreach (var t in tickets)
-         {
-            foreach (var g in ticketGroups)
-            {
-               if (t.horarioId == g.id)
-               {
-                  g.items.Add(t.id);
-               }
-            }
-         }
-
-         foreach (var group in ticketGroups)
-         {
-            if (group.items.Count == 1)
-            {
-               group.middleIndex = group.items[0];
-            }
-            else
-            {
-               if (group.items.Count % 2 == 0)
-               {
-                  group.middleIndex = group.items[(group.items.Count / 2) - 1];
-               }
-               else
-               {
-                  group.middleIndex = group.items[Convert.ToInt32((group.items.Count / 2))];
-               }
-            }
-         }
-
-         foreach (var ticket in tickets)
-         {
-            foreach (var group in ticketGroups)
-            {
-               if (ticket.horarioId == group.id)
-               {
-                  group.totalAdults += ticket.adultos;
-                  group.totalAdults += ticket.adultosPromocion;
-                  group.totalKids += ticket.nihos;
-                  group.totalKids += ticket.nihosPromocion;
-               }
-            }
-         }
-
-         foreach (var group in ticketGroups)
-         {
-            TicketControl tc = tickets.Where(t => t.id == group.middleIndex).FirstOrDefault();
-            if (tc != null)
-            {
-               tc.isKey = true;
-               tc.adultosGroup = group.totalAdults;
-               tc.nihosGroup = group.totalKids;
-            }
-         }
+         return result;
       }
 
-
-      List<TicketControl> getTicketsControlHoyByEventoDB(long eventoId, DateTime fecha)
+      List<EntradaControl> makeEntradas(dynamic dEntradas)
       {
-         try
-         {
-            var _eventoId = new SqlParameter("@eventoId", eventoId);
-            var _fecha = new SqlParameter("@fecha", fecha);
-            return _context.TicketsControl.FromSql("[getTicketsByEventoId] @eventoId,@fecha", _eventoId, _fecha).ToList();
-         }
-         catch (Exception e)
-         {
-            return null;
-         }
-      }
+         List<EntradaControl> result = new List<EntradaControl>();
 
-      [AllowAnonymous]
+         foreach (dynamic dEntrada in dEntradas)
+         {
+            result.Add(new EntradaControl() {
+               tipo = dEntrada.tipo,
+               titulo = dEntrada.titulo,
+               cantidad = dEntrada.cantidad
+            });
+			}
+
+			return result;
+		}
+		List<PromoControl> makePromos(dynamic dPromociones)
+		{
+			List<PromoControl> result = new List<PromoControl>();
+
+			foreach (dynamic dPromo in dPromociones)
+			{
+				result.Add(new PromoControl()
+				{
+				   id = dPromo.id,
+               promoId = dPromo.promoId,
+               nombre = dPromo.nombre,
+               ticket1 = dPromo.ticket1,
+               ticket2 = dPromo.ticket2,
+               ticket3 = dPromo.ticket3,
+               ticket4 = dPromo.ticket4,
+               cantidad = dPromo.cantidad
+				});
+			}
+
+			return result;
+		}
+		List<GroupedTicket> groupTickets(dynamic dynTickets)
+      {
+			List<GroupedTicket> groupedTickets = new List<GroupedTicket>();
+         List<TicketControl2> tickets = makeExplicitTickets(dynTickets);
+
+			foreach (var t in tickets)
+			{
+				if (!groupedTickets.Any(gt=>gt.horarioId == t.horarioId))
+				{
+               groupedTickets.Add(new GroupedTicket() { horarioId = t.horarioId });
+				}
+			}
+
+         foreach (var groupedTicket in groupedTickets)
+         {
+            var ticketsPerGroup = tickets.Where(t => t.horarioId == groupedTicket.horarioId).ToList();
+				groupedTicket.tickets = ticketsPerGroup;
+            groupedTicket.cantidad = ticketsPerGroup.Sum(t => t.cantidad);
+         }
+
+         return groupedTickets.OrderBy(gt=>gt.horarioId).ToList();
+		}
+
+    //  List<TicketControl> getTicketsControlHoyByEventoDB(long eventoId, DateTime fecha)
+    //  {
+    //     try
+    //     {
+
+    //        //return ticketsByEventoAndDia(eventoId, fecha);
+
+				//var _eventoId = new SqlParameter("@eventoId", eventoId);
+    //        var _fecha = new SqlParameter("@fecha", fecha);
+    //        return _context.TicketsControl.FromSql("[getTicketsByEventoId] @eventoId,@fecha", _eventoId, _fecha).ToList();
+    //     }
+    //     catch (Exception e)
+    //     {
+    //        return null;
+    //     }
+    //  }
+
+		dynamic ticketsByEventoAndDia(long eventoId,DateTime fecha)
+		{
+			try
+			{
+				var payments = _context.PaymentInfoORMs.Where(pay =>pay.eventoId == eventoId && pay.eventoFecha.Date == fecha.Date && pay.status == "PAID" && pay.isUsado == 0).Include(ev => ev.evento).ToList();
+            var apoderados = _context.Apoderados
+               .Where(ap => (payments.Select(p => p.usuarioId)).Contains(ap.id));
+
+            foreach (var pay in payments)
+            {
+               pay.apoderado = apoderados.FirstOrDefault(a=>a.id== pay.usuarioId);
+            }
+
+				var eventosTipoTickets = payments.Select(p => p.evento.ticketDefinicion).Distinct().ToList();
+
+				var bougthPromos = new List<PromoBought>();
+
+				for (int i = 0; i < payments.Count; i++)
+				{
+					if (payments[i].promociones.Length > 0)
+					{
+						var promos = payments[i].promociones.Split('|');
+						foreach (var promoFlat in promos)
+						{
+							var promoInfo = promoFlat.Split(',');
+							if (int.Parse(promoInfo[1]) > 0)
+							{
+								bougthPromos.Add(new
+									PromoBought
+								{
+									paymentId = payments[i].id,
+									promoId = int.Parse(promoInfo[0]),
+									cantidad = int.Parse(promoInfo[1])
+								});
+							}
+						}
+					}
+				}
+
+				var eventosIds = payments.Select(p => p.eventoId).Distinct().ToList();
+
+				var tickesDefinicion = _context.TicketTipos.
+					Where(t => eventosTipoTickets.Contains(t.codigo)).
+					ToList();
+
+				var ticketsPromoInfo = _context.TicketPromociones.
+					Where(tp => (bougthPromos.Select(x => x.promoId)).
+						Contains(tp.id)
+					).ToList();
+
+				var finalTickets = payments.
+					Select(pay => new
+					{
+						pay.id,
+						pay.codigo,
+						monto = pay.montoDec,
+						pay.eventoId,
+						pay.eventoFecha,
+						estado = getEstado(pay),
+						eventoLugar = pay.evento.lugar,
+						eventoJuego = pay.evento.juego,
+						pay.horarioId,
+						pay.createdOn,
+                  pay.apoderado.nombres,
+                  pay.apoderado.dni,
+                  usuarioId = pay.apoderado.id,
+                  isUsuarioRegistrado = pay.apoderado.email.Any()?1:0,
+                  pay.isUsado,
+                  pay.cantidad,
+						entradas = tickesDefinicion.Where(td => td.codigo == pay.evento.ticketDefinicion).Select((td, index) => new {
+							tipo = td.tipo == "ADULTO" ? "ticket1" : td.tipo == "NOADULTO" ? "ticket2" : td.tipo == "ENTRADA3" ? "ticket3" : "ticket4",
+							td.titulo,
+							cantidad = td.tipo == "ADULTO" ? pay.usuariosMayor4 : td.tipo == "NOADULTO" ? pay.usuariosMenor4 : td.tipo == "ENTRADA3" ? pay.ticket3 : pay.ticket4
+						}).ToList(),
+						promociones = bougthPromos.Where(bPromo => bPromo.paymentId == pay.id).Select((boughtPromo, index) => new {
+							id = boughtPromo.paymentId,
+							boughtPromo.promoId,
+							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nombre,
+							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().descripcion,
+							ticket1 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().adultos,
+							ticket2 = ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().nihos,
+							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket3,
+							ticketsPromoInfo.Where(pro => pro.id == boughtPromo.promoId).FirstOrDefault().ticket4,
+							boughtPromo.cantidad
+						}).ToList()
+					}).ToList().OrderByDescending(o => o.id);
+            return finalTickets;
+
+				//List<PaymentInfo> result = new List<PaymentInfo>();
+				//var _userId = new SqlParameter("@usuarioId", userId);
+				//result = _context.PaymentInfos.FromSql("[dbo].[misTickets] @usuarioId", _userId).ToList();
+				//foreach (PaymentInfo payment in result)
+				//{
+				//   makeTicketPromocionesList(payment);
+				//   makeTicketTiposList(payment);
+				//}
+
+				//return result;
+			}
+			catch (Exception e)
+			{
+				return null;
+			}
+		}
+
+		[AllowAnonymous]
       [HttpGet("marcarticket/{id}")]
       public async Task<IActionResult> marcarTicket(long id)
       {

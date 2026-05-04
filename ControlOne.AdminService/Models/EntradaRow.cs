@@ -47,4 +47,10 @@ namespace ControlOne.AdminService.Models
       public int horarioId { get; set; }
 
    }
+
+   public class EntradaControl {
+		public string tipo { get; set; }
+		public string titulo { get; set; }
+		public int cantidad { get; set; }
+	}
 }

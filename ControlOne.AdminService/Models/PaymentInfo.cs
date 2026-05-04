@@ -36,6 +36,8 @@ namespace ControlOne.AdminService.Models
 		public int cantidad { get; set; }
 
 		public EventoORM evento { get; set; }
+		[NotMapped]
+		public Apoderado apoderado { get; set; }
 
 		[NotMapped]
 		public string estado { get; set; }
