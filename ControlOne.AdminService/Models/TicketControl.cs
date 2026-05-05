@@ -48,8 +48,14 @@ namespace ControlOne.AdminService.Models
       public decimal monto { get; set; }
       public int cantidad { get; set; }
       public List<EntradaControl> entradas { get; set; } = new List<EntradaControl>();
-		public List<PromoControl> promociones { get; set; } = new List<PromoControl>();
-	}
+      public List<PromoControl> promociones { get; set; } = new List<PromoControl>();
+      public int entradasCantidad { get; set; }
+
+      public void calcularEntradasCantidad()
+      {
+         entradasCantidad = entradas.Sum(p => p.cantidad);
+      }
+   }
 
    public class GroupedTicket
    {

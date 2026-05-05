@@ -185,7 +185,7 @@ namespace ControlOne.AdminService.Controllers
             string llaveprivada_PRD = "sk_live_1854910889cd0bf3";
             string llavePrivada_TEST = "sk_test_GlLVNypqgJF2aWzX";
 
-				string llavePrivada = llavePrivada_TEST;
+				string llavePrivada = llaveprivada_PRD;
             var client = new RestClient("https://api.culqi.com/v2/charges");
             var request = new RestRequest(Method.POST);
             request.AddHeader("Authorization", "Bearer " + llavePrivada);
@@ -744,7 +744,7 @@ namespace ControlOne.AdminService.Controllers
                cantidad = dynTicket.cantidad,
                monto = dynTicket.monto,
                entradas = makeEntradas(dynTicket.entradas),
-               promociones = makePromos(dynTicket.promociones)
+					promociones = makePromos(dynTicket.promociones)
             });
          }
          return result;
@@ -776,6 +776,7 @@ namespace ControlOne.AdminService.Controllers
 				   id = dPromo.id,
                promoId = dPromo.promoId,
                nombre = dPromo.nombre,
+               descripcion = dPromo.descripcion,
                ticket1 = dPromo.ticket1,
                ticket2 = dPromo.ticket2,
                ticket3 = dPromo.ticket3,
@@ -788,25 +789,26 @@ namespace ControlOne.AdminService.Controllers
 		}
 		List<GroupedTicket> groupTickets(dynamic dynTickets)
       {
-			List<GroupedTicket> groupedTickets = new List<GroupedTicket>();
+			List<GroupedTicket> ticketsGroup = new List<GroupedTicket>();
          List<TicketControl2> tickets = makeExplicitTickets(dynTickets);
 
 			foreach (var t in tickets)
 			{
-				if (!groupedTickets.Any(gt=>gt.horarioId == t.horarioId))
+            t.calcularEntradasCantidad();
+				if (!ticketsGroup.Any(gt=>gt.horarioId == t.horarioId))
 				{
-               groupedTickets.Add(new GroupedTicket() { horarioId = t.horarioId });
+               ticketsGroup.Add(new GroupedTicket() { horarioId = t.horarioId });
 				}
 			}
 
-         foreach (var groupedTicket in groupedTickets)
+         foreach (var ticketGroup in ticketsGroup)
          {
-            var ticketsPerGroup = tickets.Where(t => t.horarioId == groupedTicket.horarioId).ToList();
-				groupedTicket.tickets = ticketsPerGroup;
-            groupedTicket.cantidad = ticketsPerGroup.Sum(t => t.cantidad);
+            var ticketsPerGroup = tickets.Where(t => t.horarioId == ticketGroup.horarioId).ToList();
+				ticketGroup.tickets = ticketsPerGroup;
+            ticketGroup.cantidad = ticketsPerGroup.Sum(t => t.cantidad);
          }
 
-         return groupedTickets.OrderBy(gt=>gt.horarioId).ToList();
+         return ticketsGroup.OrderBy(gt=>gt.horarioId).ToList();
 		}
 
     //  List<TicketControl> getTicketsControlHoyByEventoDB(long eventoId, DateTime fecha)
