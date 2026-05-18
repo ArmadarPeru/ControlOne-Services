@@ -11,10 +11,12 @@ using Armadar.Helpers;
 using ClosedXML.Excel;
 using ControlOne.AdminService.Data;
 using ControlOne.AdminService.Models;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -253,7 +255,120 @@ namespace ControlOne.AdminService.Controllers
          }
       }
 
-      [HttpGet("getapoderados")]
+		[AllowAnonymous]
+		[HttpGet("ticketscontrol-excel/{eventoId}/{pipedFecha}")]
+		public IActionResult getEntraasOnlineForExport(long eventoId, string pipedFecha)
+		{
+			string[] granularDate = pipedFecha.Split("|");
+			DateTime fecha = new DateTime(Convert.ToInt32(granularDate[2]), Convert.ToInt32(granularDate[1]), Convert.ToInt32(granularDate[0]));
+
+			List<GroupedTicket> ticketsControl = groupTickets(ticketsByEventoAndDia(eventoId, fecha));
+
+			GroupedTicket unicoGrupo = ticketsControl.First();
+
+         #region [ Calculate Resumen y Total]
+
+         List<Tuple<string, int>> resumen = new List<Tuple<string, int>>();
+			foreach (var tipoEntrada in unicoGrupo.tickets.First().entradas)
+			{
+            int totalPorTipoEntrada = unicoGrupo.tickets.SelectMany(ticket => ticket.entradas).Where(x => x.titulo == tipoEntrada.titulo).Sum(c => c.cantidad);
+				resumen.Add(new Tuple<string, int>(tipoEntrada.titulo, totalPorTipoEntrada));
+			}
+
+         decimal total = unicoGrupo.tickets.Sum(ticket => ticket.monto);
+
+			#endregion
+
+			List<string> dynamicColumns = new List<string>() { "C","D","E","F","G","H","I","J","K","L","M","N","O"};
+			using (MemoryStream stream = new MemoryStream())
+			{
+				var workbook = new XLWorkbook();
+				var sheets = new List<string>() { "entradas" };
+
+				int columns = 5;
+				int rowStart = 3;
+
+				foreach (var sheet in sheets)
+				{
+					var worksheet = workbook.Worksheets.Add(sheet);
+					worksheet.ColumnWidth = 25;
+					for (int i = 1; i <= columns; i++)
+					{
+						worksheet.Column(i).Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+					}
+
+					// ---------------------------------------- Headers --------------------------------------
+					worksheet.Cell("A1").Value = "Nombres";
+					worksheet.Cell("B1").Value = "DNI";
+               int indexColumn = 0;              
+
+					foreach (var tipoEntrada in unicoGrupo.tickets.First().entradas)
+               {
+                  string column = dynamicColumns[indexColumn] + "1";
+						worksheet.Cell(column).Value = tipoEntrada.titulo;
+                  indexColumn++;
+               }
+					worksheet.Cell(dynamicColumns[indexColumn] + "1").Value = "Total S/.";
+
+					worksheet.Cell(dynamicColumns[indexColumn+2] + "1").Value = "Resumen";
+
+               // ------------------------------------Display Resumen -----------------------------------
+               int rowStartResumen = rowStart;
+               foreach (var infoTipoEntrada in resumen)
+               {
+						worksheet.Cell(dynamicColumns[indexColumn + 2] + rowStartResumen.ToString()).Value = infoTipoEntrada.Item1;
+						worksheet.Cell(dynamicColumns[indexColumn + 3] + rowStartResumen.ToString()).Value = infoTipoEntrada.Item2;
+						rowStartResumen++;
+					}
+					// ------------------------------------- Headers Format ----------------------------------
+					var rngTable = worksheet.Range("A1:N1");
+					rngTable.Style
+					.Font.SetBold()
+					.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Left);
+
+					worksheet.Column("B").Style.NumberFormat.Format = "@";
+					worksheet.Column(dynamicColumns[indexColumn]).Style.NumberFormat.Format = "0.00";
+
+
+					//worksheet.Cell("A1").Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+
+					int totalColumn = 0;
+
+					unicoGrupo.tickets.ForEach(ticket =>
+					{
+						worksheet.Cell("A" + rowStart).Value = ticket.nombres;
+						worksheet.Cell("B" + rowStart).Value = ticket.dni;
+
+						int indexColumn_2 = 0;
+						foreach (var entrada in ticket.entradas)
+						{
+							worksheet.Cell(dynamicColumns[indexColumn_2] + rowStart).Value = entrada.cantidad;
+							indexColumn_2++;
+						}
+						worksheet.Cell(dynamicColumns[indexColumn_2] + rowStart).Value = ticket.monto;
+                  totalColumn = indexColumn_2;
+
+						rowStart++;
+					});
+
+               worksheet.Cell(dynamicColumns[totalColumn] + (rowStart + 2).ToString()).Value = "S/. " + total.ToString();
+				}
+
+				workbook.SaveAs(stream);
+				stream.Seek(0, SeekOrigin.Begin);
+
+				return this.File(
+					 fileContents: stream.ToArray(),
+					 contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+
+					 // By setting a file download name the framework will
+					 // automatically add the attachment Content-Disposition header
+					 fileDownloadName: "Tickets.xlsx"
+				);
+			}
+		}
+
+		[HttpGet("getapoderados")]
       public IActionResult getApoderadosForExport()
       {
          List<ApoderadoExcel> gastos = getApoderadosDB();
