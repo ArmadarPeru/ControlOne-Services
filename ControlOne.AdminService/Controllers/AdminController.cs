@@ -351,7 +351,7 @@ namespace ControlOne.AdminService.Controllers
 						rowStart++;
 					});
 
-               worksheet.Cell(dynamicColumns[totalColumn] + (rowStart + 2).ToString()).Value = "S/. " + total.ToString();
+               worksheet.Cell(dynamicColumns[totalColumn] + (rowStart + 1).ToString()).Value = "S/. " + total.ToString();
 				}
 
 				workbook.SaveAs(stream);
