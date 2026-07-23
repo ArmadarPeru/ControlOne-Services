@@ -1050,7 +1050,8 @@ namespace ControlOne.AdminService.Controllers
                   icono = entrada.tipo == "EG" ? "adult.svg" : "kid.svg",
                   mensaje = entrada.tipo == "EG" ? entrada.mensajeAdulto : entrada.mensajeNoAdulto,
                   precio = entrada.tipo == "EG" ? entrada.precioAdulto : entrada.precioNoAdulto,
-               };
+						aforo = entrada.tipo == "EG" ? entrada.aforoAdulto : entrada.aforoNoAdulto,
+					};
                gestionarEntradaDB(operacion, entradaRow);
                return Ok(new { code = 1000, message = "Entrada guardada" });
             }
@@ -1072,11 +1073,11 @@ namespace ControlOne.AdminService.Controllers
                {
                   EntradaRow entradaRowAdulto = new EntradaRow()
                   {
-                     id = adultoId,codigo = entrada.codigo,tipo = "ADULTO",titulo = entrada.tituloAdulto,icono = "adult.svg",mensaje = entrada.mensajeAdulto,precio = entrada.precioAdulto
+                     id = adultoId,codigo = entrada.codigo,tipo = "ADULTO",titulo = entrada.tituloAdulto,icono = "adult.svg",mensaje = entrada.mensajeAdulto,precio = entrada.precioAdulto, aforo = entrada.aforoAdulto
                   };
 						EntradaRow entradaRowNoAdulto = new EntradaRow()
 						{
-							id = noAdultoId,codigo = entrada.codigo,tipo = "NOADULTO",titulo = entrada.tituloNoAdulto,icono = "kid.svg",mensaje = entrada.mensajeNoAdulto,precio = entrada.precioNoAdulto
+							id = noAdultoId,codigo = entrada.codigo,tipo = "NOADULTO",titulo = entrada.tituloNoAdulto,icono = "kid.svg",mensaje = entrada.mensajeNoAdulto,precio = entrada.precioNoAdulto,aforo = entrada.aforoNoAdulto
 						};
                   entradasaGestionar.Add(entradaRowAdulto);
                   entradasaGestionar.Add(entradaRowNoAdulto);
@@ -1085,15 +1086,15 @@ namespace ControlOne.AdminService.Controllers
 					{
 						EntradaRow entradaRowAdulto = new EntradaRow()
 						{
-							id = adultoId,codigo = entrada.codigo,tipo = "ADULTO",titulo = entrada.tituloAdulto,icono = "adult.svg",mensaje = entrada.mensajeAdulto,precio = entrada.precioAdulto
+							id = adultoId,codigo = entrada.codigo,tipo = "ADULTO",titulo = entrada.tituloAdulto,icono = "adult.svg",mensaje = entrada.mensajeAdulto,precio = entrada.precioAdulto,aforo = entrada.aforoAdulto
 						};
 						EntradaRow entradaRowNoAdulto = new EntradaRow()
 						{
-							id = noAdultoId,codigo = entrada.codigo,tipo = "NOADULTO",titulo = entrada.tituloNoAdulto,icono = "kid.svg",mensaje = entrada.mensajeNoAdulto,precio = entrada.precioNoAdulto
+							id = noAdultoId,codigo = entrada.codigo,tipo = "NOADULTO",titulo = entrada.tituloNoAdulto,icono = "kid.svg",mensaje = entrada.mensajeNoAdulto,precio = entrada.precioNoAdulto,aforo = entrada.aforoNoAdulto
 						};
 						EntradaRow entrada3 = new EntradaRow()
 						{
-							id = entrada3Id,codigo = entrada.codigo,tipo = "ENTRADA3",titulo = entrada.tituloEntrada3,icono = "kid.svg",mensaje = entrada.mensajeEntrada3,precio = entrada.precioEntrada3
+							id = entrada3Id,codigo = entrada.codigo,tipo = "ENTRADA3",titulo = entrada.tituloEntrada3,icono = "kid.svg",mensaje = entrada.mensajeEntrada3,precio = entrada.precioEntrada3,aforo = entrada.aforoEntrada3
 						};
 						entradasaGestionar.Add(entradaRowAdulto);
 						entradasaGestionar.Add(entradaRowNoAdulto);
@@ -1109,7 +1110,8 @@ namespace ControlOne.AdminService.Controllers
 							titulo = entrada.tituloAdulto,
 							icono = "adult.svg",
 							mensaje = entrada.mensajeAdulto,
-							precio = entrada.precioAdulto
+							precio = entrada.precioAdulto,
+                     aforo = entrada.aforoAdulto
 						};
 						EntradaRow entradaRowNoAdulto = new EntradaRow()
 						{
@@ -1119,7 +1121,8 @@ namespace ControlOne.AdminService.Controllers
 							titulo = entrada.tituloNoAdulto,
 							icono = "kid.svg",
 							mensaje = entrada.mensajeNoAdulto,
-							precio = entrada.precioNoAdulto
+							precio = entrada.precioNoAdulto,
+                     aforo = entrada.aforoNoAdulto
 						};
 						EntradaRow entrada3 = new EntradaRow()
 						{
@@ -1129,7 +1132,8 @@ namespace ControlOne.AdminService.Controllers
 							titulo = entrada.tituloEntrada3,
 							icono = "kid.svg",
 							mensaje = entrada.mensajeEntrada3,
-							precio = entrada.precioEntrada3
+							precio = entrada.precioEntrada3,
+                     aforo = entrada.aforoEntrada3
 						};
 						EntradaRow entrada4 = new EntradaRow()
 						{
@@ -1139,7 +1143,8 @@ namespace ControlOne.AdminService.Controllers
 							titulo = entrada.tituloEntrada4,
 							icono = "kid.svg",
 							mensaje = entrada.mensajeEntrada4,
-							precio = entrada.precioEntrada4
+							precio = entrada.precioEntrada4,
+                     aforo = entrada.aforoEntrada4
 						};
 						entradasaGestionar.Add(entradaRowAdulto);
 						entradasaGestionar.Add(entradaRowNoAdulto);
@@ -1173,13 +1178,14 @@ namespace ControlOne.AdminService.Controllers
             var icono = new SqlParameter("@icono", entrada.icono);
             var mensaje = new SqlParameter("@mensaje", entrada.mensaje);
             var precio = new SqlParameter("@precio", entrada.precio);
+            var aforo = new SqlParameter("@aforo", entrada.aforo);
 
-            var sql = "EXEC dbo.gestionarEntrada @operacion,@id,@codigo,@tipo,@titulo,@icono,@mensaje,@precio";
-            _context.Database.ExecuteSqlCommand(sql, operacion, id, codigo, tipo, titulo, icono, mensaje, precio);
+            var sql = "EXEC dbo.gestionarEntrada @operacion,@id,@codigo,@tipo,@titulo,@icono,@mensaje,@precio,@aforo";
+            _context.Database.ExecuteSqlCommand(sql, operacion, id, codigo, tipo, titulo, icono, mensaje, precio, aforo);
          }
          catch (Exception)
          {
-         }         
+         }
       }
 
       [HttpPost("gestionarentradapromocion/{tipo}")]

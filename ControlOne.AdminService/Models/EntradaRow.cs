@@ -16,7 +16,8 @@ namespace ControlOne.AdminService.Models
       public string icono { get; set; }
       public string mensaje { get; set; }
       public int precio { get; set; }
-   }
+		public int aforo { get; set; }
+	}
 
    public class EntradaRequest
    {
@@ -38,6 +39,11 @@ namespace ControlOne.AdminService.Models
       public int precioNoAdulto { get; set; }
 		public int precioEntrada3 { get; set; }
 		public int precioEntrada4 { get; set; }
+
+		public int aforoAdulto { get; set; }
+		public int aforoNoAdulto { get; set; }
+		public int aforoEntrada3 { get; set; }
+		public int aforoEntrada4 { get; set; }
 	}
 
    public class ReprogramarEntradaRequest
