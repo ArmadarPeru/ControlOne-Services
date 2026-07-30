@@ -16,5 +16,6 @@ namespace ControlOne.AdminService.Models
       public string icono { get; set; }
       public string mensaje { get; set; }
       public int precio { get; set; }
-   }
+		public int aforo { get; set; }
+	}
 }

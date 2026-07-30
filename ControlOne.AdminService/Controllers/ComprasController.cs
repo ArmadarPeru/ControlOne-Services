@@ -591,26 +591,43 @@ namespace ControlOne.AdminService.Controllers
       }
 
       [AllowAnonymous]
-      [HttpGet("aforoinfo/{eventoId}/{pipedFecha}/{horarioId}")]
-      public async Task<IActionResult> getAforoInfo(long eventoId, string pipedFecha, int horarioId)
+      [HttpGet("aforoinfo/{eventoId}/{pipedFecha}/{horarioId}/{entradas}/{promociones}")]
+      public async Task<IActionResult> getAforoInfo(long eventoId, string pipedFecha, int horarioId, string entradas, string promociones)
       {
+         List<int> entradasTypeUnavailables = new List<int>();
          try
          {
             var evento = _context.EventosORM.First(e => e.id == eventoId);
 
             if (evento.isCompraDirecta == 1)
             {
-               var simpleAforo = getSimpleAforoDB(eventoId);
+               int[] entradasSolicitadas = entradas.Split(',').Select(int.Parse).ToArray();
+               int[] entradasFromPromosSolicitadas = transFormPromosSolicitadas(promociones).ToArray();
 
-               var aforoInfo = new
+               var currentAforoMeta = getCurrentAforoGroupedByEntradaType(eventoId);
+
+               for (int i = 0; i < currentAforoMeta.Count; i++)
                {
-                  id = 0,
-                  aforo = simpleAforo.aforo,
-                  ocupados = simpleAforo.ocupados,
-                  disponible = simpleAforo.disponible
-               };
+                  currentAforoMeta[i].Requerido = entradasSolicitadas[i] + entradasFromPromosSolicitadas[i];
+                  currentAforoMeta[i].IsDisponible = currentAforoMeta[i].Disponible >= (entradasSolicitadas[i] + entradasFromPromosSolicitadas[i]);
+                  if (currentAforoMeta[i].Limite == -1)
+                  {
+                     currentAforoMeta[i].IsDisponible = true;
+                  }
+               }
 
-               return Ok(new { code = 1000, message = "SUCCESS", aforoInfo = aforoInfo });
+               //var simpleAforo = getSimpleAforoDB(eventoId);
+
+               //          var aforoInfo = new
+               //          {
+               //             id = 0,
+               //             aforo = simpleAforo.aforo,
+               //             ocupados = simpleAforo.ocupados,
+               //             disponible = simpleAforo.disponible
+               //          };
+               bool aforoDisponible = !currentAforoMeta.Any(aforo => !aforo.IsDisponible);
+
+               return Ok(new { code = 1000, message = "SUCCESS", aforo = currentAforoMeta, aforoDisponible });
             }
             else
             {
@@ -635,6 +652,131 @@ namespace ControlOne.AdminService.Controllers
          {
             return Ok(new { code = 2000, message = "No se pudo obtener el aforo" });
          }
+      }
+
+      List<int> transFormPromosSolicitadas(string promosFlat)
+      {
+         var requiredPromos = new List<PromoBought>();
+
+         var promosArray = promosFlat.Split('|');
+         foreach (var promoFlat in promosArray)
+         {
+            var promoInfo = promoFlat.Split(',');
+            if (int.Parse(promoInfo[1]) > 0)
+            {
+               requiredPromos.Add(new PromoBought
+               {
+                  promoId = int.Parse(promoInfo[0]),
+                  cantidad = int.Parse(promoInfo[1])
+               });
+            }
+         }
+
+			int totalPromos_Ticket1 = 0, totalPromos_Ticket2 = 0, totalPromos_Ticket3 = 0, totalPromos_Ticket4 = 0;
+
+			var ticketsPromoInfo = _context.TicketPromociones.Where(tp => (requiredPromos.Select(x => x.promoId)).Contains(tp.id)).ToList();
+
+			foreach (PromoBought requiredPromo in requiredPromos)
+			{
+				totalPromos_Ticket1 += ticketsPromoInfo.FirstOrDefault(tpi => tpi.id == requiredPromo.promoId).adultos * requiredPromo.cantidad;
+				totalPromos_Ticket2 += ticketsPromoInfo.FirstOrDefault(tpi => tpi.id == requiredPromo.promoId).nihos * requiredPromo.cantidad;
+				totalPromos_Ticket3 += ticketsPromoInfo.FirstOrDefault(tpi => tpi.id == requiredPromo.promoId).ticket3 * requiredPromo.cantidad;
+				totalPromos_Ticket4 += ticketsPromoInfo.FirstOrDefault(tpi => tpi.id == requiredPromo.promoId).ticket4 * requiredPromo.cantidad;
+			}
+
+			List<int> requiredAforoPerEntradaType = new List<int>();
+			requiredAforoPerEntradaType.Add(totalPromos_Ticket1);
+			requiredAforoPerEntradaType.Add(totalPromos_Ticket2);
+			requiredAforoPerEntradaType.Add(totalPromos_Ticket3);
+			requiredAforoPerEntradaType.Add(totalPromos_Ticket4);
+
+			return requiredAforoPerEntradaType;
+      }
+
+      List<AforoFit> getCurrentAforoGroupedByEntradaType(long eventoId)
+      {
+         List<AforoFit> result = new List<AforoFit>();
+
+         var payments = _context.PaymentInfoORMs.Where(pay => pay.eventoId == eventoId && pay.status == "PAID").ToList();
+
+         int totalUsadoEntradas_1 = payments.Sum(ent => ent.usuariosMayor4);
+         int totalUsadoEntradas_2 = payments.Sum(ent => ent.usuariosMenor4);
+         int totalUsadoEntradas_3 = payments.Sum(ent => ent.ticket3);
+         int totalUsadoEntradas_4 = payments.Sum(ent => ent.ticket4);
+
+         List<int> aforosUsadosIndividuales = new List<int>();
+         aforosUsadosIndividuales.Add(totalUsadoEntradas_1);
+         aforosUsadosIndividuales.Add(totalUsadoEntradas_2);
+         aforosUsadosIndividuales.Add(totalUsadoEntradas_3);
+         aforosUsadosIndividuales.Add(totalUsadoEntradas_4);
+
+         /*   Promociones usadas  */
+
+         var bougthPromos = new List<PromoBought>();
+
+         for (int i = 0; i < payments.Count; i++)
+         {
+            if (payments[i].promociones.Length > 0)
+            {
+               var promos = payments[i].promociones.Split('|');
+               foreach (var promoFlat in promos)
+               {
+                  var promoInfo = promoFlat.Split(',');
+                  if (int.Parse(promoInfo[1]) > 0)
+                  {
+                     bougthPromos.Add(new PromoBought
+                     {
+                        paymentId = payments[i].id,
+                        promoId = int.Parse(promoInfo[0]),
+                        cantidad = int.Parse(promoInfo[1])
+                     });
+                  }
+               }
+            }
+         }
+
+         int totalPromos_Ticket1 = 0, totalPromos_Ticket2 = 0, totalPromos_Ticket3 = 0, totalPromos_Ticket4 = 0;
+
+         var ticketsPromoInfo = _context.TicketPromociones.Where(tp => (bougthPromos.Select(x => x.promoId)).Contains(tp.id)).ToList();
+
+         foreach (PromoBought bougthPromo in bougthPromos)
+         {
+            totalPromos_Ticket1 += ticketsPromoInfo.FirstOrDefault(tpi => tpi.id == bougthPromo.promoId).adultos * bougthPromo.cantidad;
+            totalPromos_Ticket2 += ticketsPromoInfo.FirstOrDefault(tpi => tpi.id == bougthPromo.promoId).nihos * bougthPromo.cantidad;
+            totalPromos_Ticket3 += ticketsPromoInfo.FirstOrDefault(tpi => tpi.id == bougthPromo.promoId).ticket3 * bougthPromo.cantidad;
+            totalPromos_Ticket4 += ticketsPromoInfo.FirstOrDefault(tpi => tpi.id == bougthPromo.promoId).ticket4 * bougthPromo.cantidad;
+         }
+
+         List<int> aforosUsadosPorPromo = new List<int>();
+         aforosUsadosPorPromo.Add(totalPromos_Ticket1);
+         aforosUsadosPorPromo.Add(totalPromos_Ticket2);
+         aforosUsadosPorPromo.Add(totalPromos_Ticket3);
+         aforosUsadosPorPromo.Add(totalPromos_Ticket4);
+
+         List<TicketDefinicion> ticketsDefinicion = getTicketTiposByEventoIdDB(eventoId);
+
+         for (int i = 0; i < ticketsDefinicion.Count; i++)
+         {
+            if (ticketsDefinicion[i].aforo > 0)
+            {
+               result.Add(new AforoFit()
+               {
+                  Limite = ticketsDefinicion[i].aforo,
+                  Ocupados = aforosUsadosIndividuales[i] + aforosUsadosPorPromo[i],
+                  Disponible = ticketsDefinicion[i].aforo - aforosUsadosIndividuales[i] - aforosUsadosPorPromo[i]
+               });
+            }
+            else
+            {
+               result.Add(new AforoFit()
+               {
+                  Limite = -1,
+                  Ocupados = -1,
+                  Disponible = -1
+               });
+            }
+         }
+         return result;
       }
 
       [AllowAnonymous]

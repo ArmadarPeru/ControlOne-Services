@@ -116,4 +116,13 @@ GET {{ControlOne.AdminService_HostAddress}}/admin/eventohorarios/{{evento}}/{{pi
 @pipedFecha=02|05|2026
 GET {{ControlOne.AdminService_HostAddress}}/admin/ticketspromociones/{{evento}}/{{pipedFecha}}
 
+###
 
+@eventoId=1
+@pipedFecha=01|01|2026
+@horarioId=0
+@entradas=1,2,3
+@promociones=230,1|231,2
+GET {{ControlOne.AdminService_HostAddress}}/admin/aforoinfo/{{eventoId}}/{{pipedFecha}}/{{horarioId}}/{{entradas}}/{{promociones}}
+
+###
